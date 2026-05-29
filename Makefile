@@ -3,7 +3,7 @@ NAME = webserv
 CPP = c++
 FLAGS = -Wall -Wextra -Werror -std=c++98
 
-SRC = 
+SRC = main.cpp
 
 OBJ = $(SRC:.cpp=.o)
 

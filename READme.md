@@ -19,7 +19,7 @@
     - Support listening on multiple ports simultaneously.
     - Stress test the server to guarantee it remains available and never crashes.
 
--  Maxime (t'es oblige deso) — HTTP Parsing & Configuration File:
+- Maxime — (t'es oblige deso) HTTP Parsing & Configuration File:
     - Parse the configuration file (listen pairs, error pages, max body size, per-route rules: methods, redirections, root, directory listing, default file, upload path).
     - Parse incoming HTTP requests (method, headers, body) and handle chunked transfer encoding by unchunking before further processing.
     - Build HTTP responses with accurate status codes and proper headers.

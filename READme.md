@@ -1,4 +1,4 @@
-**Please, do not creat branch ! - Mathilde**
+***Please, do not creat branch ! - Mathilde***
 
 **Some notes to start webserv project:**
  -  All I/O(input output) operations on sockets and pipes must go through a single poll() (or equivalent) that monitors both reading and writing simultaneously — regular disk files are exempt.
@@ -33,3 +33,11 @@
     - Write configuration files and default demo files to showcase every feature during evaluation.
     - Test across multiple browsers, compare behavior with NGINX, and write tests in Python, Golang, or another suitable language.
     - Write the README.md (description, instructions, resources, and AI usage disclosure).
+
+**Description:**
+
+**Instructions:**
+
+**Resources:**
+
+**Additional things:**

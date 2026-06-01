@@ -39,5 +39,8 @@
 **Instructions:**
 
 **Resources:**
+-   cmd:man
+-   ibm.com
+-   cplusplus.com
 
 **Additional things:**

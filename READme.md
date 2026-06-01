@@ -1,5 +1,3 @@
-***Please, do not creat branch ! - Mathilde***
-
 **Some notes to start webserv project:**
  -  All I/O(input output) operations on sockets and pipes must go through a single poll() (or equivalent) that monitors both reading and writing simultaneously — regular disk files are exempt.
  - Every network file descriptor must be non-blocking, and no read/write may be called without prior readiness confirmation from poll(); checking errno after those calls is strictly forbidden.
@@ -44,3 +42,4 @@
 -   cplusplus.com
 
 **Additional things:**
+-   Use Ai to verify some test i did before starting the project.

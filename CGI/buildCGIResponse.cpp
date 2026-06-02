@@ -6,11 +6,11 @@
 /*   By: mpoirier <mpoirier@student.42nice.fr>      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/06/01 16:30:27 by mpoirier          #+#    #+#             */
-/*   Updated: 2026/06/02 12:02:49 by mpoirier         ###   ########.fr       */
+/*   Updated: 2026/06/02 13:31:39 by mpoirier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "webserv.hpp"
+#include "../webserv.hpp"
 
 std::string toLower(const std::string &name)
 {

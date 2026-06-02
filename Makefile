@@ -3,7 +3,7 @@ NAME = webserv
 CPP = c++
 FLAGS = -Wall -Wextra -Werror -std=c++98
 
-SRC = main.cpp
+SRC = main.cpp CGI/buildCGIResponse.cpp CGI/executeCGI.cpp
 
 OBJ = $(SRC:.cpp=.o)
 

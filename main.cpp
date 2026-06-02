@@ -6,7 +6,7 @@
 /*   By: mpoirier <mpoirier@student.42nice.fr>      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/05/29 15:30:41 by mpoirier          #+#    #+#             */
-/*   Updated: 2026/06/01 16:54:22 by mpoirier         ###   ########.fr       */
+/*   Updated: 2026/06/02 12:44:43 by mpoirier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -48,6 +48,7 @@ int main(void)
         if (bsep != std::string::npos) { body = rawRequest.substr(bsep + 4); }
         //end parse
         
+        //partie CGI -- ne pas toucher
         bool isCGI = false; std::string interpreter; std::string::size_type dot = path.rfind('.');
         if (dot != std::string::npos)
         {
@@ -60,6 +61,7 @@ int main(void)
             std::string res = buildCGIResponse(cgiOut);
             send(client_fd, res.c_str(), res.size(), 0);
         } else {
+            //peut etre changer c'est juste un truc qui teste
             std::string body = "<h1> Hello (world) from c++98 </h1>";
             std::ostringstream response;
             response << "HTTP/1.1 200 OK\r\n" << "Content-Type: text/html\r\n" << "Content-Lenght: " << body.size() << "\r\n" << "Connection: close\r\n" << "\r\n" << body;

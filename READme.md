@@ -11,7 +11,7 @@
  - CGI scripts are executed via fork/execve (the only authorized use of fork) with correct environment variables, proper unchunking of chunked requests, and EOF handling for output without content_length.
 
 **Task distribution:**
-- Bastien — Network Core & Event Loop:
+- Bozil — Network Core & Event Loop:
     - Set up sockets (bind, listen, accept) and manage multiple simultaneous connections.
     - Implement the main event loop using poll() / epoll() / select() / kqueue() monitoring both read and write events.
     - Ensure all network file descriptors are non-blocking and that no read/write is performed without prior poll readiness.
@@ -19,14 +19,14 @@
     - Support listening on multiple ports simultaneously.
     - Stress test the server to guarantee it remains available and never crashes.
 
-- Maxime — (t'es oblige deso) HTTP Parsing & Configuration File:
+- Mbores — (t'es oblige deso) HTTP Parsing & Configuration File:
     - Parse the configuration file (listen pairs, error pages, max body size, per-route rules: methods, redirections, root, directory listing, default file, upload path).
     - Parse incoming HTTP requests (method, headers, body) and handle chunked transfer encoding by unchunking before further processing.
     - Build HTTP responses with accurate status codes and proper headers.
     - Serve a fully static website and handle file uploads from clients.
     - Provide default error pages when none are configured.
 
-- Mathilde — CGI(Common Gateway Interface), Testing & README:
+- Mpoirier — CGI(Common Gateway Interface), Testing & README:
     - Implement CGI execution via fork/execve with correct environment variables and proper stdin/stdout piping.
     - Support at least one CGI type (php-cgi or Python) and handle output with or without content_length using EOF as the terminator.
     - Ensure the CGI runs in the correct working directory for relative path resolution.

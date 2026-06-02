@@ -1,0 +1,30 @@
+server {
+	listen [interface:port];
+	server_name [name];
+
+	# Upload limit for POST
+	client_max_body_size [size_in_bytes];
+
+	# Send a certain file when HTTP error code match
+	error_page [error_code] [local_error_file];
+
+	location [path] {
+		# Transform the location path in the request by this root
+		root [path];
+		# Default file openned when a folder is requested
+		index [html_file];
+		# Allowed methods between GET POST and DELETE
+		allowed_methods [METHODS];
+		# If no index found in the folder, list the content of the folder if on, send an error if off
+		autoindex off;
+		# The folder where the uploads must go
+		upload_dir [folder];
+		# If the URL match with a file with the extension, execute a CGI extern program to generate the answer
+		cgi [extension] [URL];
+	}
+
+	location /redirect {
+		# Redirect to the given URL with error code
+		return [error_code] [URL];
+	}
+}

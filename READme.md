@@ -34,14 +34,6 @@
     - Test across multiple browsers, compare behavior with NGINX, and write tests in Python, Golang, or another suitable language.
     - Write the README.md (description, instructions, resources, and AI usage disclosure).
 
-- Bastien — Network Core & Event Loop:
-    - Set up sockets (bind, listen, accept) and manage multiple simultaneous connections.
-    - Implement the main event loop using poll() / epoll() / select() / kqueue() monitoring both read and write events.
-    - Ensure all network file descriptors are non-blocking and that no read/write is performed without prior poll readiness.
-    - Handle client disconnections gracefully and ensure no request ever hangs indefinitely.
-    - Support listening on multiple ports simultaneously.
-    - Stress test the server to guarantee it remains available and never crashes.
-
 **Description:**
 
 **Instructions:**

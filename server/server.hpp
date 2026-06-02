@@ -6,26 +6,26 @@
 /*   By: bozil <bozil@student.42.fr>                +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/06/02 12:52:06 by bozil             #+#    #+#             */
-/*   Updated: 2026/06/02 13:09:40 by bozil            ###   ########.fr       */
+/*   Updated: 2026/06/02 15:10:12 by bozil            ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #ifndef SERVER_HPP
 # define SERVER_HPP
 
+# include <cerrno>
 # include <cstddef>
+# include <cstring>
+# include <fcntl.h>
+# include <iostream>
 # include <map>
+# include <netinet/in.h>
 # include <poll.h>
+# include <sstream>
 # include <string>
+# include <sys/socket.h>
+# include <unistd.h>
 # include <vector>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <fcntl.h>
-#include <unistd.h>
-#include <cerrno>
-#include <cstring>
-#include <sstream>
-#include <iostream>
 
 class Server
 {

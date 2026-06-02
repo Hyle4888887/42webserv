@@ -1,4 +1,4 @@
-***Please, do not creat branch ! - Mathilde***
+***This project has been created as part of the 42 curriculum by Bozil Mbores & Mpoirier***
 
 **Some notes to start webserv project:**
  -  All I/O(input output) operations on sockets and pipes must go through a single poll() (or equivalent) that monitors both reading and writing simultaneously — regular disk files are exempt.

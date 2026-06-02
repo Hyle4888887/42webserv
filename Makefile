@@ -3,7 +3,7 @@ NAME = webserv
 CPP = c++
 FLAGS = -Wall -Wextra -Werror -std=c++98
 
-SRC = main.cpp CGI/buildCGIResponse.cpp CGI/executeCGI.cpp server/server.cpp
+SRC = webserv/main.cpp CGI/buildCGIResponse.cpp CGI/executeCGI.cpp server/server.cpp
 
 OBJ = $(addprefix $(OBJ_DIR)/, $(SRC:.cpp=.o))
 

@@ -1,18 +1,18 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   buildCGIResponse.cpp                               :+:      :+:    :+:   */
+/*   buildResponseCGI.cpp                               :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: mpoirier <mpoirier@student.42nice.fr>      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/06/01 16:30:27 by mpoirier          #+#    #+#             */
-/*   Updated: 2026/06/02 13:31:39 by mpoirier         ###   ########.fr       */
+/*   Updated: 2026/06/04 13:17:59 by mpoirier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "../webserv.hpp"
+#include "CGI.hpp"
 
-std::string toLower(const std::string &name)
+static std::string toLower(const std::string &name)
 {
     std::string lower = name;
     for (std::string::iterator it = lower.begin(); it != lower.end(); ++it)
@@ -20,10 +20,10 @@ std::string toLower(const std::string &name)
     return lower;
 }
 
-std::string buildCGIResponse(const std::string &cgiOut)
+std::string CGI::buildResponse(const std::string &cgiOut) const
 {
     //creation en-tete
-    std::string headerBlock, cgiBody; std::string::size_type sep=cgiOut.find("\r\n\r\n");
+    std::string headerBlock, cgiBody; std::string::size_type sep = cgiOut.find("\r\n\r\n");
     size_t sepLen = 4;
     if (sep == std::string::npos) { sep = cgiOut.find("\n\n"); sepLen = 2; }
     if (sep != std::string::npos) { headerBlock = cgiOut.substr(0, sep); cgiBody = cgiOut.substr(sep + sepLen); }
@@ -50,6 +50,7 @@ std::string buildCGIResponse(const std::string &cgiOut)
     }
     if (hasLocation && !hasStatus) { status = "302 Found"; }
     
+    /* Formattage de reponse à voir avec maxime */
     std::ostringstream response;
     response << "HTTP/1.1 " << status << "\r\n" ;
     response << forwarded;

@@ -7,7 +7,7 @@ FLAGS = -Wall -Wextra -Werror -std=c++98
 
 OBJ_DIR = objs
 
-SRC = main.cpp \
+SRC = mainDirectory/main.cpp \
 	CGI/buildResponseCGI.cpp CGI/startCGI.cpp CGI/CGI.cpp\
 	server/server.cpp
 

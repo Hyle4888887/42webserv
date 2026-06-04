@@ -6,7 +6,7 @@
 /*   By: mpoirier <mpoirier@student.42nice.fr>      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/06/01 16:23:14 by mpoirier          #+#    #+#             */
-/*   Updated: 2026/06/04 13:14:23 by mpoirier         ###   ########.fr       */
+/*   Updated: 2026/06/04 15:00:20 by mpoirier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -47,7 +47,7 @@ static void executeChild(const std::string &interpreter, const std::string &scri
     std::exit(1);
 }
 
-static void closeIt(int &fd[2]) { close(fd[0]); close(fd[1]); }
+static void closeIt(int fd[2]) { close(fd[0]); close(fd[1]); }
 
 bool CGI::start(const std::string &interpreter, const std::string &scriptPath, const std::string &method, const std::string &query, const std::string &body)
 {

@@ -3,16 +3,16 @@
 /*                                                        :::      ::::::::   */
 /*   main.cpp                                           :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: bozil <bozil@student.42.fr>                +#+  +:+       +#+        */
+/*   By: mpoirier <mpoirier@student.42nice.fr>      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/05/29 15:30:41 by mpoirier          #+#    #+#             */
-/*   Updated: 2026/06/02 15:09:47 by bozil            ###   ########.fr       */
+/*   Updated: 2026/06/04 16:03:52 by mpoirier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "webserv.hpp"
 
-int main(void)
+/*int main(void)
 {
     int server_fd = socket(AF_INET, SOCK_STREAM, 0);
     if (server_fd < 0) { std::cerr << "socket: " << std::strerror(errno) << std::endl; return 1; }
@@ -54,7 +54,7 @@ int main(void)
         {
             std::string ext = path.substr(dot);
             if (ext == ".py") { isCGI = true; interpreter  = "/usr/bin/python3"; }
-            /*else if (ext == ".php") { isCGI = true; interpreter  = "/usr/bin/php-cgi"; }*/
+            //else if (ext == ".php") { isCGI = true; interpreter  = "/usr/bin/php-cgi"; }
         }
         if (isCGI) {
             std::string scriptPath = "." + path; std::string cgiOut = executeCGI(interpreter, scriptPath, method, query, body);
@@ -72,4 +72,22 @@ int main(void)
     }
     close(server_fd);
     return 0;
+}*/
+
+int	main(int argc, char **argv)
+{
+	(void)argc;
+	(void)argv;
+
+	signal(SIGPIPE, SIG_IGN);
+
+	Server	server;
+
+	if (!server.addListener(8080))
+		return 1;
+	if (!server.addListener(4242))
+		return 1;
+
+	server.run();
+	return 0;
 }

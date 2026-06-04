@@ -30,15 +30,15 @@ class CGI
     public:
         //Dans le CGI.cpp
         CGI(void);
-        pid_t getpid(void) const;
+        pid_t getPid(void) const;
         int getFdIn(void) const;
         int getFdOut(void) const;
 
         // start et buildResponse sont chacune dans leur fichier
-        bool start(const std::string &interpreter, const std::string &scriptPath, const std::string &method, const std::strin,g &query, const std::string &body);
+        bool start(const std::string &interpreter, const std::string &scriptPath, const std::string &method, const std::string &query, const std::string &body);
         static std::string buildResponse(const std::string &cgiOut);
         
-}
+};
 
 //std::string executeCGI(const std::string &interpreter, const std::string &scriptPath, const std::string &method, const std::string &query, const std::string &body);
 //std::string buildCGIResponse(const std::string &cgiOut);

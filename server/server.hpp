@@ -6,7 +6,7 @@
 /*   By: bozil <bozil@student.42.fr>                +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/06/02 12:52:06 by bozil             #+#    #+#             */
-/*   Updated: 2026/06/04 12:11:22 by bozil            ###   ########.fr       */
+/*   Updated: 2026/06/04 13:57:30 by bozil            ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -26,6 +26,10 @@
 #include <cstring>
 #include <sstream>
 #include <iostream>
+
+#ifndef POLLRDHUP
+# define POLLRDHUP 0
+#endif
 
 #define CLIENT_TIMEOUT 20
 

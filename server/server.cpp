@@ -6,7 +6,7 @@
 /*   By: bozil <bozil@student.42.fr>                +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/06/02 12:51:56 by bozil             #+#    #+#             */
-/*   Updated: 2026/06/04 11:34:32 by bozil            ###   ########.fr       */
+/*   Updated: 2026/06/04 13:50:35 by bozil            ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -63,7 +63,7 @@ int	Server::ListeningSocket(int port)
 		return -1;
 	}
 
-	struct sockaddr_in	addr = {};
+	struct sockaddr_in	addr;
 	std::memset(&addr, 0, sizeof(addr));
 	addr.sin_family      = AF_INET;
 	addr.sin_addr.s_addr = htonl(INADDR_ANY);
@@ -227,9 +227,9 @@ void	Server::handleRead(std::size_t index)
 	
 	if (n < 0)
 	{
-		if (errno == EAGAIN || errno == EWOULDBLOCK)
-			return;
-		std::cerr << "recv error fd=" << fd << ": " << std::strerror(errno) << std::endl;
+		// Ne pas verifier errno apres recv (interdit par le sujet)
+		// Si poll() a signale POLLIN, recv() ne devrait pas retourner EAGAIN
+		std::cerr << "recv error fd=" << fd << std::endl;
 		closeClient(index);
 		return;
 	}
@@ -273,10 +273,9 @@ void	Server::handleWrite(std::size_t index)
 	ssize_t	n = send(fd, client.outBuffer.c_str(), client.outBuffer.size(), 0);
 	if (n < 0)
 	{
-		if (errno == EAGAIN || errno == EWOULDBLOCK)
-			return;
-		std::cerr << "send error fd=" << fd << ": "
-				  << std::strerror(errno) << std::endl;
+		// Ne pas verifier errno apres send (interdit par le sujet)
+		// Si poll() a signale POLLOUT, send() ne devrait pas retourner EAGAIN
+		std::cerr << "send error fd=" << fd << std::endl;
 		closeClient(index);
 		return;
 	}

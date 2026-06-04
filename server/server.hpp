@@ -6,26 +6,28 @@
 /*   By: bozil <bozil@student.42.fr>                +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/06/02 12:52:06 by bozil             #+#    #+#             */
-/*   Updated: 2026/06/02 15:10:12 by bozil            ###   ########.fr       */
+/*   Updated: 2026/06/04 12:11:22 by bozil            ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#ifndef SERVER_HPP
-# define SERVER_HPP
+#pragma once
 
-# include <cerrno>
-# include <cstddef>
-# include <cstring>
-# include <fcntl.h>
-# include <iostream>
-# include <map>
-# include <netinet/in.h>
-# include <poll.h>
-# include <sstream>
-# include <string>
-# include <sys/socket.h>
-# include <unistd.h>
-# include <vector>
+#include <ctime>
+#include <cstddef>
+#include <map>
+#include <poll.h>
+#include <string>
+#include <vector>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <fcntl.h>
+#include <unistd.h>
+#include <cerrno>
+#include <cstring>
+#include <sstream>
+#include <iostream>
+
+#define CLIENT_TIMEOUT 20
 
 class Server
 {
@@ -43,8 +45,9 @@ class Server
 		std::string inBuffer;  // get data
 		std::string outBuffer; // to send
 		bool responseReady;    // send
+		time_t lastActivityTime; // timeout
 
-		Client() : responseReady(false)
+		Client() : responseReady(false), lastActivityTime(std::time(NULL))
 		{
 		}
 	};
@@ -58,10 +61,9 @@ class Server
 	void handleWrite(std::size_t index);
 	void closeClient(std::size_t index);
 	void buildResponse(Client &client);
+	void checkTimeouts();
 
 	std::vector<int> _listenFds;
 	std::vector<struct pollfd> _pollFds;
 	std::map<int, Client> _clients;
 };
-
-#endif

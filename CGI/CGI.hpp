@@ -36,7 +36,7 @@ class CGI
 
         // start et buildResponse sont chacune dans leur fichier
         bool start(const std::string &interpreter, const std::string &scriptPath, const std::string &method, const std::strin,g &query, const std::string &body);
-        static std::string buildResponse(const std::string &cgiOut) const;
+        static std::string buildResponse(const std::string &cgiOut);
         
 }
 

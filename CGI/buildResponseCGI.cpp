@@ -6,7 +6,7 @@
 /*   By: mpoirier <mpoirier@student.42nice.fr>      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/06/01 16:30:27 by mpoirier          #+#    #+#             */
-/*   Updated: 2026/06/04 13:17:59 by mpoirier         ###   ########.fr       */
+/*   Updated: 2026/06/04 14:32:30 by mpoirier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -20,7 +20,7 @@ static std::string toLower(const std::string &name)
     return lower;
 }
 
-std::string CGI::buildResponse(const std::string &cgiOut) const
+std::string CGI::buildResponse(const std::string &cgiOut)
 {
     //creation en-tete
     std::string headerBlock, cgiBody; std::string::size_type sep = cgiOut.find("\r\n\r\n");

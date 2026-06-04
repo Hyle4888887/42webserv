@@ -6,18 +6,18 @@
 /*   By: bozil <bozil@student.42.fr>                +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/06/02 12:52:06 by bozil             #+#    #+#             */
-/*   Updated: 2026/06/02 13:09:40 by bozil            ###   ########.fr       */
+/*   Updated: 2026/06/04 11:33:30 by bozil            ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#ifndef SERVER_HPP
-# define SERVER_HPP
+#pragma once
 
-# include <cstddef>
-# include <map>
-# include <poll.h>
-# include <string>
-# include <vector>
+#include <ctime>
+#include <cstddef>
+#include <map>
+#include <poll.h>
+#include <string>
+#include <vector>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <fcntl.h>
@@ -26,6 +26,8 @@
 #include <cstring>
 #include <sstream>
 #include <iostream>
+
+#define CLIENT_TIMEOUT 20
 
 class Server
 {
@@ -43,8 +45,9 @@ class Server
 		std::string inBuffer;  // get data
 		std::string outBuffer; // to send
 		bool responseReady;    // send
+		time_t lastActivityTime; // timeout
 
-		Client() : responseReady(false)
+		Client() : responseReady(false), lastActivityTime(std::time(NULL))
 		{
 		}
 	};
@@ -58,10 +61,9 @@ class Server
 	void handleWrite(std::size_t index);
 	void closeClient(std::size_t index);
 	void buildResponse(Client &client);
+	void checkTimeouts();
 
 	std::vector<int> _listenFds;
 	std::vector<struct pollfd> _pollFds;
 	std::map<int, Client> _clients;
 };
-
-#endif

@@ -6,12 +6,14 @@
 /*   By: bozil <bozil@student.42.fr>                +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/06/02 12:51:56 by bozil             #+#    #+#             */
-/*   Updated: 2026/06/02 13:09:40 by bozil            ###   ########.fr       */
+/*   Updated: 2026/06/04 11:34:32 by bozil            ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "server.hpp"
 
+/*refaire to_string car n'existe pas en C++98
+converti en std::string */
 namespace
 {
 	std::string	toString(unsigned long value)
@@ -32,6 +34,7 @@ Server::~Server()
 		close(_pollFds[i].fd);
 }
 
+/*rend le socket non bloquant*/
 bool	Server::setNonBlocking(int fd)
 {
 	if (fcntl(fd, F_SETFL, O_NONBLOCK) < 0)
@@ -42,6 +45,7 @@ bool	Server::setNonBlocking(int fd)
 	return true;
 }
 
+/*configure et crée un socket d'écoute*/
 int	Server::ListeningSocket(int port)
 {
 	int	fd = socket(AF_INET, SOCK_STREAM, 0);
@@ -60,6 +64,7 @@ int	Server::ListeningSocket(int port)
 	}
 
 	struct sockaddr_in	addr = {};
+	std::memset(&addr, 0, sizeof(addr));
 	addr.sin_family      = AF_INET;
 	addr.sin_addr.s_addr = htonl(INADDR_ANY);
 	addr.sin_port        = htons(static_cast<unsigned short>(port));
@@ -85,6 +90,7 @@ int	Server::ListeningSocket(int port)
 	return fd;
 }
 
+/*crée un socket d'écoute*/
 bool	Server::addListener(int port)
 {
 	int	fd = ListeningSocket(port);
@@ -103,6 +109,7 @@ bool	Server::addListener(int port)
 	return true;
 }
 
+/*si fd est un socket d'écoute renvoie true*/
 bool	Server::isListener(int fd) const
 {
 	for (std::size_t i = 0; i < _listenFds.size(); ++i)
@@ -111,50 +118,72 @@ bool	Server::isListener(int fd) const
 	return false;
 }
 
-void	Server::run()
+/*fonction principale*/
+void Server::run()
 {
 	if (_pollFds.empty())
 	{
-		std::cerr << "Aucun port en ecoute, rien a faire." << std::endl;
+		std::cerr << "Aucun port en ecoute." << std::endl;
 		return;
 	}
-
+ 
 	while (true)
 	{
-		int	ready = poll(&_pollFds[0], static_cast<nfds_t>(_pollFds.size()), -1);
+	/*premier timout pour voir les clients inactif*/
+		int ready = poll(&_pollFds[0], static_cast<nfds_t>(_pollFds.size()), 5000); // en ms
+ 
 		if (ready < 0)
 		{
-			if (errno == EINTR)
+			if (errno == EINTR) // signal recu = recommencer le poll
 				continue;
 			std::cerr << "poll: " << std::strerror(errno) << std::endl;
 			break;
 		}
-
-		for (std::size_t i = _pollFds.size(); i-- > 0; )
+ 
+		/*reverifier les timeouts*/
+		checkTimeouts();
+ 
+		/* Effacer les clients inactifs sans invalidé les indices restants */
+		for (std::size_t i = _pollFds.size(); i-- > 0;)
 		{
-			short	revents = _pollFds[i].revents;
+			short revents = _pollFds[i].revents;
 			if (revents == 0)
 				continue;
-
-			int	fd = _pollFds[i].fd;
-
+ 
+			int fd = _pollFds[i].fd;
+ 
+			// Erreur ou deconnexion
 			if (revents & (POLLERR | POLLHUP | POLLNVAL))
 			{
 				if (!isListener(fd))
 					closeClient(i);
 				continue;
 			}
-
+ 
+			// Detecte la deconnexion propre plus tot que recv() == 0
+			if (!isListener(fd) && (revents & POLLRDHUP))
+			{
+				std::cout << "[-] POLLRDHUP fd=" << fd << std::endl;
+				closeClient(i);
+				continue;
+			}
+ 
+			// Nouvelle connexion
 			if (isListener(fd))
 				handleNewConnection(fd);
+ 
+			// Donnees a lire
 			else if (revents & POLLIN)
 				handleRead(i);
+ 
+			// Pret a envoyer la reponse
 			else if (revents & POLLOUT)
 				handleWrite(i);
 		}
 	}
 }
 
+/*gerer les nouvelles connexions*/
 void	Server::handleNewConnection(int listenFd)
 {
 	while (true)
@@ -172,6 +201,7 @@ void	Server::handleNewConnection(int listenFd)
 		struct pollfd	pfd;
 		pfd.fd      = clientFd;
 		pfd.events  = POLLIN;	// wait
+		pfd.events |= POLLRDHUP;
 		pfd.revents = 0;
 		_pollFds.push_back(pfd);
 		_clients[clientFd] = Client();
@@ -180,32 +210,45 @@ void	Server::handleNewConnection(int listenFd)
 	}
 }
 
+/*gerer les donnees recues*/
 void	Server::handleRead(std::size_t index)
 {
 	int		fd = _pollFds[index].fd;
 	char	buffer[4096];
 
 	ssize_t	n = recv(fd, buffer, sizeof(buffer), 0);
-	if (n <= 0)
+	
+	if (n == 0)
 	{
 		std::cout << "[-] Client deconnecte fd=" << fd << std::endl;
 		closeClient(index);
 		return;
 	}
+	
+	if (n < 0)
+	{
+		if (errno == EAGAIN || errno == EWOULDBLOCK)
+			return;
+		std::cerr << "recv error fd=" << fd << ": " << std::strerror(errno) << std::endl;
+		closeClient(index);
+		return;
+	}
 
-	Client	&client = _clients[fd];
+	
+	Client &client = _clients[fd];
 	client.inBuffer.append(buffer, static_cast<std::size_t>(n));
-
-	/* parsing here.)*/
-	if (!client.responseReady
-		&& client.inBuffer.find("\r\n\r\n") != std::string::npos)
+	client.lastActivityTime = std::time(NULL);
+	
+	if (!client.responseReady && client.inBuffer.find("\r\n\r\n") != std::string::npos)
 	{
 		buildResponse(client);
 		client.responseReady = true;
 		_pollFds[index].events = POLLOUT;
+		_pollFds[index].events |= POLLRDHUP;
 	}
 }
 
+/*construire la reponse HTTP*/
 void	Server::buildResponse(Client &client)
 {
 	std::string	body = "<h1>Hello from webserv</h1>";
@@ -221,25 +264,60 @@ void	Server::buildResponse(Client &client)
 	client.outBuffer = response;
 }
 
+/*envoie la reponse*/
 void	Server::handleWrite(std::size_t index)
 {
 	int		fd = _pollFds[index].fd;
 	Client	&client = _clients[fd];
 
 	ssize_t	n = send(fd, client.outBuffer.c_str(), client.outBuffer.size(), 0);
-	if (n <= 0)
+	if (n < 0)
 	{
+		if (errno == EAGAIN || errno == EWOULDBLOCK)
+			return;
+		std::cerr << "send error fd=" << fd << ": "
+				  << std::strerror(errno) << std::endl;
 		closeClient(index);
 		return;
 	}
+ 
 	client.outBuffer.erase(0, static_cast<std::size_t>(n));
+	client.lastActivityTime = std::time(NULL);
+ 
 	if (client.outBuffer.empty())
 	{
-		std::cout << "[i] Reponse envoyee, fermeture fd=" << fd << std::endl;
-		closeClient(index);	// Connection: close
+		std::cout << "[i] Reponse envoyee fd=" << fd << std::endl;
+		closeClient(index);
 	}
 }
 
+/*ferme les clients inactifs*/
+void Server::checkTimeouts()
+{
+	time_t now = std::time(NULL);
+ 
+	for (std::size_t i = _pollFds.size(); i-- > 0;)
+	{
+		int fd = _pollFds[i].fd;
+ 
+		if (isListener(fd))
+			continue;
+ 
+		std::map<int, Client>::iterator it = _clients.find(fd);
+		if (it == _clients.end())
+			continue;
+ 
+		double elapsed = std::difftime(now, it->second.lastActivityTime);
+		if (elapsed > CLIENT_TIMEOUT)
+		{
+			std::cout << "[!] Timeout client fd=" << fd
+					  << " (inactif " << (int)elapsed << "s)" << std::endl;
+			closeClient(i);
+		}
+	}
+}
+
+/*supprime un client*/
 void	Server::closeClient(std::size_t index)
 {
 	int	fd = _pollFds[index].fd;

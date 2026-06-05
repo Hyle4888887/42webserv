@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   main.cpp                                           :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: mpoirier <mpoirier@student.42nice.fr>      +#+  +:+       +#+        */
+/*   By: bozil <bozil@student.42.fr>                +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/05/29 15:30:41 by mpoirier          #+#    #+#             */
-/*   Updated: 2026/06/04 16:03:52 by mpoirier         ###   ########.fr       */
+/*   Updated: 2026/06/05 11:10:08 by bozil            ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -85,7 +85,7 @@ int	main(int argc, char **argv)
 
 	if (!server.addListener(8080))
 		return 1;
-	if (!server.addListener(4242))
+	if (!server.addListener(8081))
 		return 1;
 
 	server.run();

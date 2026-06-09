@@ -18,13 +18,13 @@ int main()
     std::memset(&addr, 0, sizeof(addr));
     addr.sin_family      = AF_INET;
     addr.sin_addr.s_addr = INADDR_ANY;
-    addr.sin_port        = htons(4242);
+    addr.sin_port        = htons(8080);
 
     // 3. Bind + listen
     bind(server_fd, (struct sockaddr*)&addr, sizeof(addr));
     listen(server_fd, 1);
 
-    std::cout << "En attente sur http://localhost:4242" << std::endl;
+    std::cout << "En attente sur http://localhost:8080" << std::endl;
 
     // 4. Attendre UNE connexion (boucle simple, pas encore de poll)
     int client_fd = -1;

@@ -7,9 +7,10 @@ FLAGS = -Wall -Wextra -Werror -std=c++98
 
 OBJ_DIR = objs
 
-SRC = mainDirectory/main.cpp \
+SRC = main.cpp \
 	CGI/buildResponseCGI.cpp CGI/startCGI.cpp CGI/CGI.cpp\
-	server/server.cpp
+	server/server.cpp server/buildHTTP.cpp server/checkTimeout.cpp server/handleCGI.cpp server/handleOperation.cpp server/poll.cpp server/socket.cpp\
+	utils/utils.cpp
 
 OBJ = $(addprefix $(OBJ_DIR)/, $(SRC:.cpp=.o))
 

@@ -21,6 +21,8 @@
 #include <vector>
 #include <cstdlib>
 
+#include "../utils/utils.hpp"
+
 class CGI
 {
     private:

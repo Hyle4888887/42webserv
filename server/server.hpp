@@ -6,7 +6,7 @@
 /*   By: mpoirier <mpoirier@student.42nice.fr>      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/06/02 12:52:06 by bozil             #+#    #+#             */
-/*   Updated: 2026/06/04 15:53:05 by mpoirier         ###   ########.fr       */
+/*   Updated: 2026/06/09 14:13:12 by mpoirier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -32,6 +32,7 @@
 #include <cstring>
 
 #include "../CGI/CGI.hpp"
+#include "../utils/utils.hpp"
 
 #ifndef POLLRDHUP
 # define POLLRDHUP 0
@@ -50,7 +51,6 @@ class Server
 
   private:
 	Server(const Server &other);
-	Server &operator=(const Server &other);
 	struct	Client
 	{
 		std::string inBuffer;  // get data

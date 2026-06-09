@@ -6,18 +6,11 @@
 /*   By: mpoirier <mpoirier@student.42nice.fr>      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/06/01 16:23:14 by mpoirier          #+#    #+#             */
-/*   Updated: 2026/06/04 15:00:20 by mpoirier         ###   ########.fr       */
+/*   Updated: 2026/06/09 14:11:50 by mpoirier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "CGI.hpp"
-
-static std::string toString(unsigned long value)
-{
-    std::ostringstream oss;
-    oss << value;
-    return oss.str();
-}
 
 static void executeChild(const std::string &interpreter, const std::string &scriptPath, const std::string &method, const std::string &query, const std::string &body)
 {

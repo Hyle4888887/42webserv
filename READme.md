@@ -1,4 +1,4 @@
-***This project has been created as part of the 42 curriculum by Bozil Mbores & Mpoirier***
+***This project has been created as part of the 42 curriculum by Bozil, Mbores & Mpoirier***
 
 **Some notes to start webserv project:**
  -  All I/O(input output) operations on sockets and pipes must go through a single poll() (or equivalent) that monitors both reading and writing simultaneously — regular disk files are exempt.
@@ -19,7 +19,7 @@
     - Support listening on multiple ports simultaneously.
     - Stress test the server to guarantee it remains available and never crashes.
 
-- Mbores — (t'es oblige deso) HTTP Parsing & Configuration File:
+- Mbores — HTTP Parsing & Configuration File:
     - Parse the configuration file (listen pairs, error pages, max body size, per-route rules: methods, redirections, root, directory listing, default file, upload path).
     - Parse incoming HTTP requests (method, headers, body) and handle chunked transfer encoding by unchunking before further processing.
     - Build HTTP responses with accurate status codes and proper headers.
@@ -39,5 +39,11 @@
 **Instructions:**
 
 **Resources:**
+-   cmd:man
+-   ibm.com
+-   cplusplus.com
 
 **Additional things:**
+-   Use Ai to :
+    - Verify some test i did before starting the project.
+    - Start somwhere else with a guide without coding.

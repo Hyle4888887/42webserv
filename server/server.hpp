@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   server.hpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: mpoirier <mpoirier@student.42nice.fr>      +#+  +:+       +#+        */
+/*   By: bozil <bozil@student.42.fr>                +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/06/02 12:52:06 by bozil             #+#    #+#             */
-/*   Updated: 2026/06/09 14:13:12 by mpoirier         ###   ########.fr       */
+/*   Updated: 2026/06/10 11:06:45 by bozil            ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -31,6 +31,7 @@
 #include <cerrno>
 #include <cstring>
 
+#include "../HTTP/HTTP.hpp"
 #include "../CGI/CGI.hpp"
 #include "../utils/utils.hpp"
 
@@ -53,18 +54,17 @@ class Server
 	Server(const Server &other);
 	struct	Client
 	{
-		std::string inBuffer;  // get data
-		std::string outBuffer; // to send
-		bool responseReady;    // send
-		time_t lastActivityTime; // timeout
+		std::string inBuffer;
+		std::string outBuffer;
+		bool responseReady;
+		time_t lastActivityTime;
 
-		// --- CGI ---
 		bool        CGIActive;
 		pid_t       CGIPid;
 		int         CGIFdIn;
 		int         CGIFdOut;
-		std::string CGIInput;   // corps restant à écrire
-		std::string CGIOutput;  // sortie accumulée
+		std::string CGIInput;
+		std::string CGIOutput;
 		time_t      CGIStart;
 
 		Client(): responseReady(false), lastActivityTime(std::time(NULL)), CGIActive(false), CGIPid(-1), CGIFdIn(-1), CGIFdOut(-1), CGIStart(0) {}
@@ -78,14 +78,15 @@ class Server
 	void handleRead(std::size_t index);
 	void handleWrite(std::size_t index);
 	void closeClient(std::size_t index);
-	void buildResponse(Client &client);
+	void buildResponse(Client &client, const std::string &rawRequest);
 	void checkTimeouts();
 	void checkCGITimeouts();
 
 	std::vector<int> _listenFds;
 	std::vector<struct pollfd> _pollFds;
 	std::map<int, Client> _clients;
-	std::map<int, int> _CGIToClient; // pipe fd -> client fd
+	std::map<int, int> _CGIToClient;
+	ServerConfig _config;
 
 	bool isCGIFd(int fd) const;
 	void startCGI(int clientFd, const std::string &interpreter, const std::string &scriptPath, const std::string &method, const std::string &query, const std::string &body);
@@ -93,7 +94,6 @@ class Server
 	void handleCGIWrite(std::size_t index);
 	void finishCGI(int clientFd);
 
-	// gestion sûre des pollFds
 	void disablePollFdByFd(int fd);
 	void setClientPollout(int clientFd);
 	void compactPollFds();

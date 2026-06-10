@@ -8,6 +8,7 @@ FLAGS = -Wall -Wextra -Werror -std=c++98
 OBJ_DIR = objs
 
 SRC = main.cpp \
+	HTTP/HTTP.cpp HTTP/build.cpp HTTP/handle.cpp HTTP/response.cpp \
 	CGI/buildResponseCGI.cpp CGI/startCGI.cpp CGI/CGI.cpp\
 	server/server.cpp server/buildHTTP.cpp server/checkTimeout.cpp server/handleCGI.cpp server/handleOperation.cpp server/poll.cpp server/socket.cpp\
 	utils/utils.cpp

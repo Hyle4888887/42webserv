@@ -6,13 +6,11 @@
 /*   By: bozil <bozil@student.42.fr>                +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/06/10 10:39:29 by bozil             #+#    #+#             */
-/*   Updated: 2026/06/10 12:51:05 by bozil            ###   ########.fr       */
+/*   Updated: 2026/06/10 12:52:37 by bozil            ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "HTTP.hpp"
-
-#include <dirent.h>
+#include "HTTP.cpp"
 
 std::string Response::buildDirectoryListing(const std::string &urlPath, const std::string &fsPath)
 {

@@ -6,19 +6,11 @@
 /*   By: bozil <bozil@student.42.fr>                +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/06/10 10:21:45 by bozil             #+#    #+#             */
-/*   Updated: 2026/06/10 12:51:02 by bozil            ###   ########.fr       */
+/*   Updated: 2026/06/10 12:53:26 by bozil            ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "HTTP.hpp"
-#include <sys/stat.h>
-#include <dirent.h>
-#include <unistd.h>
-#include <fstream>
-#include <sstream>
-#include <cstring>
-#include <ctime>
-#include <iostream>
 
 std::string Response::getMime(const std::string &path)
 {

@@ -6,11 +6,11 @@
 /*   By: bozil <bozil@student.42.fr>                +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/06/10 10:45:23 by bozil             #+#    #+#             */
-/*   Updated: 2026/06/10 12:50:55 by bozil            ###   ########.fr       */
+/*   Updated: 2026/06/10 12:53:41 by bozil            ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "HTTP.hpp"
+#include "HTTP.cpp"
 
 std::string Response::statusText(int code)
 {

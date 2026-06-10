@@ -6,11 +6,26 @@
 /*   By: bozil <bozil@student.42.fr>                +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/06/10 10:22:11 by bozil             #+#    #+#             */
-/*   Updated: 2026/06/10 12:50:58 by bozil            ###   ########.fr       */
+/*   Updated: 2026/06/10 12:53:33 by bozil            ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #pragma once
+
+#include <dirent.h>
+#include <ctime>
+#include <fstream>
+#include <iostream>
+#include <sys/stat.h>
+#include <unistd.h>
+#include <sys/stat.h>
+#include <dirent.h>
+#include <unistd.h>
+#include <fstream>
+#include <sstream>
+#include <cstring>
+#include <ctime>
+#include <iostream>
 #include "struct.hpp"
 #include "../utils/utils.hpp"
 

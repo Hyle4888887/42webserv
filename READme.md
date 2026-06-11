@@ -35,15 +35,25 @@
     - Write the README.md (description, instructions, resources, and AI usage disclosure).
 
 **Description:**
+- The Webserv project involves designing and implementing, as a team and in C++98, a complete HTTP server — non-blocking network management with a single poll(), request parsing, NGINX-style configuration, GET/POST/DELETE methods, and execution of CGI scripts — while respecting strict constraints of robustness, performance and compliance with the HTTP protocol.
+- The goal of this project is to deepen our understanding of the HTTP protocol and low-level network programming by implementing core web server functionality without relying on any external libraries. The server supports the GET, POST, and DELETE methods, serves static websites, allows file uploads, and can execute CGI scripts (such as Python). It is configured via an NGINX-inspired configuration file, which defines listening ports, routes, error pages, and per-route rules such as allowed methods, redirections, and directory listing.
+- The project emphasizes reliability and performance: it must remain non-blocking at all times, never crash under any circumstances, and stay compatible with standard web browsers and tools like curl and telnet.
 
 **Instructions:**
+- make
+- ./webserv
+- open new terminal
+- telnet localhost 8080
+- GET / HTTP/1.1 (saut a la ligne) Host: localhost
+- curl http://localhost:8080
 
 **Resources:**
--   cmd:man
--   ibm.com
--   cplusplus.com
+- cmd:man
+- ibm.com
+- cplusplus.com
 
 **Additional things:**
 -   Use Ai to :
     - Verify some test i did before starting the project.
-    - Start somwhere else with a guide without coding.
+    - Start somwhere else with a guide without ai coding for me.
+    - Verify any bads things in the code even if it compile.

@@ -6,7 +6,7 @@
 /*   By: mpoirier <mpoirier@student.42nice.fr>      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/06/09 14:05:17 by mpoirier          #+#    #+#             */
-/*   Updated: 2026/06/09 14:11:18 by mpoirier         ###   ########.fr       */
+/*   Updated: 2026/06/11 14:04:38 by mpoirier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -18,3 +18,5 @@ std::string	toString(unsigned long value)
 	oss << value;
 	return oss.str();
 }
+
+int lastC(const std::string str) { return str[str.size() - 1]; }

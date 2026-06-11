@@ -6,7 +6,7 @@
 /*   By: mpoirier <mpoirier@student.42nice.fr>      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/06/09 14:04:54 by mpoirier          #+#    #+#             */
-/*   Updated: 2026/06/09 14:10:45 by mpoirier         ###   ########.fr       */
+/*   Updated: 2026/06/11 14:04:54 by mpoirier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -19,3 +19,4 @@
 #include <vector> 
 
 std::string	toString(unsigned long value);
+int lastC(const std::string str);

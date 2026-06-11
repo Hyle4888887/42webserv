@@ -1,12 +1,12 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   buildResponseCGI.cpp                               :+:      :+:    :+:   */
+/*   buildResponse.cpp                                  :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: mpoirier <mpoirier@student.42nice.fr>      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/06/01 16:30:27 by mpoirier          #+#    #+#             */
-/*   Updated: 2026/06/04 14:32:30 by mpoirier         ###   ########.fr       */
+/*   Updated: 2026/06/11 14:05:49 by mpoirier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -32,7 +32,7 @@ std::string CGI::buildResponse(const std::string &cgiOut)
     std::string status = "200 OK", forwarded; bool hasStatus = false, hasLocation = false;
     std::istringstream hs(headerBlock); std::string line;
     while (std::getline(hs, line)) {
-        if (!line.empty() && line[line.size() - 1] == '\r') { line.erase(line.size() - 1); }
+        if (!line.empty() && lastC(line) == '\r') { line.erase(line.size() - 1); }
         if (line.empty()) { continue; }
         
         std::string::size_type colon = line.find(':');

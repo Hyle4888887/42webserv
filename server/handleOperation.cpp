@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   handleOperation.cpp                                :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: mpoirier <mpoirier@student.42nice.fr>      +#+  +:+       +#+        */
+/*   By: bozil <bozil@student.42.fr>                +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/06/09 13:58:21 by mpoirier          #+#    #+#             */
-/*   Updated: 2026/06/09 14:00:05 by mpoirier         ###   ########.fr       */
+/*   Updated: 2026/06/10 11:08:29 by bozil            ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -29,7 +29,7 @@ void	Server::handleNewConnection(int listenFd)
 
 		struct pollfd	pfd;
 		pfd.fd      = clientFd;
-		pfd.events  = POLLIN;	// wait
+		pfd.events  = POLLIN;
 		pfd.events |= POLLRDHUP;
 		pfd.revents = 0;
 		_pollFds.push_back(pfd);
@@ -48,8 +48,6 @@ void	Server::handleWrite(std::size_t index)
 	ssize_t	n = send(fd, client.outBuffer.c_str(), client.outBuffer.size(), 0);
 	if (n < 0)
 	{
-		// Ne pas verifier errno apres send (interdit par le sujet)
-		// Si poll() a signale POLLOUT, send() ne devrait pas retourner EAGAIN
 		std::cerr << "send error fd=" << fd << std::endl;
 		closeClient(index);
 		return;
@@ -83,8 +81,6 @@ void	Server::handleRead(std::size_t index)
 	
 	if (n < 0)
 	{
-		// Ne pas verifier errno apres recv (interdit par le sujet)
-		// Si poll() a signale POLLIN, recv() ne devrait pas retourner EAGAIN
 		std::cerr << "recv error fd=" << fd << std::endl;
 		closeClient(index);
 		return;
@@ -110,7 +106,6 @@ void	Server::handleRead(std::size_t index)
 	{
 		std::string ext = path.substr(dot);
 		if (ext == ".py")  { CGI = true; interpreter = "/usr/bin/python3"; }
-		//else if (ext == ".php") { CGI = true; interpreter = "/usr/bin/php-CGI"; }
 	}
 
 	if (CGI)
@@ -132,11 +127,10 @@ void	Server::handleRead(std::size_t index)
 		}
 		else
 			startCGI(fd, interpreter, scriptPath, method, query, body);
-		// si CGI lancé : PAS de POLLOUT ici, on attend la fin du CGI
-	} // CGI end
+	}
 	else
 	{
-		buildResponse(client);
+		buildResponse(client, rawRequest);
 		client.responseReady = true;
 		_pollFds[index].events = POLLOUT;
 		_pollFds[index].events |= POLLRDHUP;

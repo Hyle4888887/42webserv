@@ -44,13 +44,15 @@
 - ./webserv
 - open new terminal
 - telnet localhost 8080
-- GET / HTTP/1.1 (saut a la ligne) Host: localhost
+- GET / HTTP/1.1 Host: localhost
 - curl http://localhost:8080
+- curl http://localhost:8080/redirection
 
 **Resources:**
 - cmd:man
 - ibm.com
 - cplusplus.com
+- https://contabo.com/blog/http-response-codes-server-statuses/?utm_source=google&utm_medium=cpc&utm_campaign=brand-pmax-global&utm_term=&utm_content=&gad_source=1&gad_campaignid=23237090875&gbraid=0AAAAAD_Qy-fg_Km4x4kTjqANuto9M8HXt&gclid=CjwKCAjwuanRBhBSEiwAY5y6V6aK9XyHYQwTdtUixaY-O5vlLe97PXhMLGKYXuAfpI-5Ss6uo5XO2RoC4DQQAvD_BwE#418-im-a-teapot-45
 
 **Additional things:**
 -   Use Ai to :

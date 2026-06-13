@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Webserv — Test Suite</title>
+  <style>
+    body { font-family: sans-serif; max-width: 700px; margin: 60px auto; color: #222; background: #f9f9f9; }
+    h1 { border-bottom: 2px solid #333; padding-bottom: 10px; }
+    h2 { color: #444; margin-top: 40px; }
+    ul { line-height: 2; }
+    a { color: #0066cc; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .tag { display: inline-block; font-size: 11px; padding: 2px 7px; border-radius: 4px; margin-left: 8px; font-weight: bold; vertical-align: middle; }
+    .get  { background: #d4edda; color: #155724; }
+    .post { background: #cce5ff; color: #004085; }
+    .del  { background: #f8d7da; color: #721c24; }
+    .cgi  { background: #fff3cd; color: #856404; }
+  </style>
+</head>
+<body>
+  <h1>🌐 Webserv — Test Suite</h1>
+  <p>Page d'accueil du site de test. Utilise les liens ci-dessous pour valider chaque fonctionnalité du serveur.</p>
+
+  <h2>📄 Fichiers statiques</h2>
+  <ul>
+    <li><a href="/index.html">index.html</a> <span class="tag get">GET</span> — cette page</li>
+    <li><a href="/static.html">static.html</a> <span class="tag get">GET</span> — page statique simple</li>
+    <li><a href="/image.html">image.html</a> <span class="tag get">GET</span> — page avec une image</li>
+  </ul>
+
+  <h2>📤 Upload de fichiers</h2>
+  <ul>
+    <li><a href="/upload.html">upload.html</a> <span class="tag post">POST</span> — formulaire d'upload</li>
+  </ul>
+
+  <h2>🗑️ Suppression</h2>
+  <ul>
+    <li><a href="/delete.html">delete.html</a> <span class="tag del">DELETE</span> — tester la suppression d'un fichier uploadé</li>
+  </ul>
+
+  <h2>⚙️ CGI</h2>
+  <ul>
+    <li><a href="/cgi-bin/hello.py">cgi-bin/hello.py</a> <span class="tag cgi">CGI Python</span> — réponse simple</li>
+    <li><a href="/cgi-bin/form.py">cgi-bin/form.py</a> <span class="tag cgi">CGI Python</span> — formulaire POST</li>
+    <li><a href="/cgi-bin/info.php">cgi-bin/info.php</a> <span class="tag cgi">CGI PHP</span> — phpinfo allégé</li>
+  </ul>
+
+  <h2>❌ Pages d'erreur</h2>
+  <ul>
+    <li><a href="/does_not_exist.html">Lien cassé</a> <span class="tag del">404</span> — déclenche une 404</li>
+    <li><a href="/errors/404.html">/errors/404.html</a> — page 404 directe</li>
+    <li><a href="/errors/405.html">/errors/405.html</a> — page 405 directe</li>
+    <li><a href="/errors/500.html">/errors/500.html</a> — page 500 directe</li>
+  </ul>
+</body>
+</html>

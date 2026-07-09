@@ -18,6 +18,9 @@ struct Token
 {
     TokenType type;
     std::string value;
+
+    size_t line;
+    size_t column;
 };
 
 #endif

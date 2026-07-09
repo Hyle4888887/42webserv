@@ -11,9 +11,12 @@ class Lexer
 private:
 	std::string _content;
 	size_t		_i;
+	size_t		_line;
+	size_t		_column;
 
 	void	skipWhitespace();
 	Token	readWord();
+	void	advance();
 public:
 	Lexer(const std::string& content);
 	Lexer(const Lexer& other);

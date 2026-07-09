@@ -1,10 +1,18 @@
 #include "configParser.hpp"
 
+void ConfigParser::error(const Token& token, const std::string& message)
+{
+	std::ostringstream oss;
+	oss << "Line " << token.line
+		<< ", column " << token.column
+		<< ": " << message;
+	throw std::runtime_error(oss.str());
+}
+
 void ConfigParser::expect(const std::vector<Token> &tokens, size_t &pos, TokenType expected)
 {
 	if (tokens[pos].type != expected)
-		throw std::runtime_error("Unexpected token");
-	pos++;
+		error(tokens[pos], "Unexpected : '" + tokens[pos].value + "'");
 }
 
 void ConfigParser::parse(const std::vector<Token> &tokens)
@@ -15,7 +23,7 @@ void ConfigParser::parse(const std::vector<Token> &tokens)
 		if (tokens[pos].value == "server")
 			_config.servers.push_back(parseServer(tokens, pos));
 		else
-			throw std::runtime_error("Expected 'server'");
+			error(tokens[pos], "Expected 'server'");
 	}
 }
 
@@ -25,12 +33,13 @@ ServerConfig ConfigParser::parseServer(const std::vector<Token> &tokens, size_t 
 	ServerConfig server;
 	std::vector<std::string> doneOptions;
 	expect(tokens, pos, LBRACE);
+	pos++;
 	while (tokens[pos].type != RBRACE)
 	{
 		for (auto option : doneOptions)
 		{
 			if (tokens[pos].value == option)
-				throw std::runtime_error(option + " can't be put twice");
+				error(tokens[pos], "'" + option + "' already present, no duplicate allowed");
 		}
 		if (tokens[pos].value == "listen")
 		{
@@ -40,42 +49,50 @@ ServerConfig ConfigParser::parseServer(const std::vector<Token> &tokens, size_t 
 		else if (tokens[pos].value == "server_name")
 		{
 			pos++;
-			if (tokens[pos].type != IDENTIFIER)
-				throw std::runtime_error("No server_name provided");
+			expect(tokens, pos, IDENTIFIER);
 			server.serverName = tokens[pos].value;
 			pos++;
 			expect(tokens, pos, SEMICOLON);
+			pos++;
 			doneOptions.push_back("server_name");
 		}
 		else if (tokens[pos].value == "client_max_body_size")
 		{
 			pos++;
 			if (!isNumber(tokens[pos].value))
-				throw std::runtime_error("Number expected in client_max_body_size");
+				error(tokens[pos], "Number expected in 'client_max_body_size'");
 			server.clientMaxBodySize = std::atoi(tokens[pos].value.c_str());
 			pos++;
 			expect(tokens, pos, SEMICOLON);
+			pos++;
 			doneOptions.push_back("client_max_body_size");
 		}
 		else if (tokens[pos].value == "error_page")
 		{
 			pos++;
+			expect(tokens, pos, IDENTIFIER);
 			if (!isNumber(tokens[pos].value))
-				throw std::runtime_error("Number expected in error_page");
+				error(tokens[pos], "Number expected in 'error_page'");
 			int error_code = std::atoi(tokens[pos].value.c_str());
 			if (server.errorPages.count(error_code))
-				throw std::runtime_error("Error code " + std::to_string(error_code) + " can't be put twice");
+				error(tokens[pos], "Error code " + std::to_string(error_code) + " already present, no duplicate allowed");
 			pos++;
+			expect(tokens, pos, IDENTIFIER);
 			if (!endsWith(tokens[pos].value, ".html"))
-				throw std::runtime_error("Error page " + std::to_string(error_code) + " must be a .html file");
+				error(tokens[pos], "Error page " + std::to_string(error_code) + " must be a .html file");
 			std::ifstream file(tokens[pos].value);
 			if (!file)
-				throw std::runtime_error("HTML page for error_page " + std::to_string(error_code) + " not found");
+				error(tokens[pos], "HTML page for error_page " + std::to_string(error_code) + " failed to open, or not found");
 			file.close();
 			server.errorPages[error_code] = tokens[pos].value;
 			pos++;
 			expect(tokens, pos, SEMICOLON);
+			pos++;
 		}
+		else if (tokens[pos].value == "location")
+			server.locations.push_back(parseLocation(tokens, pos));
+		else
+			error(tokens[pos], "Unexpected : '" + tokens[pos].value + "'");
 	}
 	pos++;
 	return server;
@@ -83,33 +100,64 @@ ServerConfig ConfigParser::parseServer(const std::vector<Token> &tokens, size_t 
 
 LocationConfig ConfigParser::parseLocation(const std::vector<Token> &tokens, size_t &pos)
 {
-	return LocationConfig();
+	pos++;
+	LocationConfig location;
+	std::vector<std::string> doneOptions;
+	expect(tokens, pos, IDENTIFIER);
+	location.path = tokens[pos].value;
+	pos++;
+	expect(tokens, pos, LBRACE);
+	pos++;
+	while (tokens[pos].type != RBRACE)
+	{
+		for (auto option : doneOptions)
+		{
+			if (tokens[pos].value == option)
+				error(tokens[pos], "'" + option + "' already present, no duplicate allowed");
+		}
+		if (tokens[pos].value == "root")
+		{
+			pos++;
+			expect(tokens, pos, IDENTIFIER);
+			location.root = tokens[pos].value;
+			pos++;
+			expect(tokens, pos, SEMICOLON);
+			pos++;
+			doneOptions.push_back("root");
+		}
+		else if (tokens[pos].value == "index")
+		{
+			
+		}
+		else
+			error(tokens[pos], "Unexpected : '" + tokens[pos].value + "'");
+	}
 }
 
 void ConfigParser::parseListen(ServerConfig& server, const std::vector<Token> &tokens, size_t &pos)
 {
 	pos++;
-	if (tokens[pos].type != IDENTIFIER)
-		throw std::runtime_error("Expected a port or/and an IP address at listen");
+	expect(tokens, pos, IDENTIFIER);
 	size_t res = tokens[pos].value.find(':');
 	if (res != std::string::npos)
 	{
 		if (!isIPv4(tokens[pos].value.substr(0, res)))
-			throw std::runtime_error("Wrong IP address provided in listen");
+			error(tokens[pos], "Wrong IP address provided in listen");
 		server.host = tokens[pos].value.substr(0, res);
 		if (!isValidPort(tokens[pos].value.substr(res + 1)))
-			throw std::runtime_error("Port is empty or out of range");
+			error(tokens[pos], "Port is empty or out of range");
 		server.port = std::atoi(tokens[pos].value.substr(res + 1).c_str());
 	}
 	else
 	{
 		server.host = "0.0.0.0";
 		if (!isValidPort(tokens[pos].value))
-			throw std::runtime_error("Port is empty or out of range");
+			error(tokens[pos], "Port is empty or out of range");
 		server.port = std::atoi(tokens[pos].value.c_str());
 	}
 	pos++;
 	expect(tokens, pos, SEMICOLON);
+	pos++;
 }
 
 bool ConfigParser::endsWith(const std::string& fullString, const std::string& ending)

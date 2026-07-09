@@ -17,6 +17,7 @@ class ConfigParser
 private:
 	Config _config;
 	
+	void error(const Token& token, const std::string& message);
 	void expect(const std::vector<Token>& tokens, size_t& pos, TokenType expected);
 	void parse(const std::vector<Token>& tokens);
 	

@@ -2,15 +2,15 @@
 
 void Lexer::skipWhitespace()
 {
-	while (_i < _content.size())
+	while (this->_i < this->_content.size())
 	{
-		if (_content[_i] == '#')
+		if (this->_content[_i] == '#')
 		{
-			while (_i < _content.size() && _content[_i] != '\n')
-				_i++;
+			while (this->_i < this->_content.size() && this->_content[_i] != '\n')
+				advance();
 		}
-		else if (isspace(_content[_i]))
-			_i++;
+		else if (isspace(this->_content[_i]))
+			advance();
 		else
 			break ;
 	}
@@ -21,59 +21,73 @@ std::vector<Token> Lexer::tokenize()
 	char	c;
 
 	std::vector<Token> tokens;
-	while (_i < _content.size())
+	while (this->_i < this->_content.size())
 	{
 		skipWhitespace();
-		if (_i >= _content.size())
+		if (this->_i >= this->_content.size())
 			break ;
-		c = _content[_i];
+		c = this->_content[_i];
 		if (c == '{')
 		{
-			tokens.push_back({LBRACE, "{"});
-			_i++;
+			tokens.push_back({LBRACE, "{", this->_line, this->_column});
+			advance();
 		}
 		else if (c == '}')
 		{
-			tokens.push_back({RBRACE, "}"});
-			_i++;
+			tokens.push_back({RBRACE, "}", this->_line, this->_column});
+			advance();
 		}
 		else if (c == ';')
 		{
-			tokens.push_back({SEMICOLON, ";"});
-			_i++;
+			tokens.push_back({SEMICOLON, ";", this->_line, this->_column});
+			advance();
 		}
 		else
 			tokens.push_back(readWord());
 	}
-	tokens.push_back({END_OF_FILE, ""});
+	tokens.push_back({END_OF_FILE, "", this->_line, this->_column});
 	return (tokens);
 }
 
 Token Lexer::readWord()
 {
+	char	c;
+
 	std::string value;
-	while (_i < _content.size())
+	size_t line = this->_line;
+	size_t column = this->_column;
+	while (this->_i < this->_content.size())
 	{
-		char c = _content[_i];
-		if (std::isspace(static_cast<unsigned char>(c)) ||
-			c == '{' || c == '}' || c == ';')
-			break;
+		c = this->_content[_i];
+		if (std::isspace(static_cast<unsigned char>(c)) || c == '{' || c == '}'
+			|| c == ';')
+			break ;
 		value += c;
-		_i++;
+		advance();
 	}
-	return {IDENTIFIER, value};
+	return {IDENTIFIER, value, line, column};
 }
 
-Lexer::Lexer(const std::string &content)
+void Lexer::advance()
 {
-	this->_content = content;
-	this->_i = 0;
+	if (this->_content[_i] == '\n')
+    {
+        this->_line++;
+        this->_column = 1;
+    }
+    else
+        this->_column++;
+    this->_i++;
 }
 
-Lexer::Lexer(const Lexer &other)
+Lexer::Lexer(const std::string &content) : _content(content), _i(0), _line(1),
+	_column(1)
 {
-	this->_content = other._content;
-	this->_i = other._i;
+}
+
+Lexer::Lexer(const Lexer &other) : _content(other._content), _i(other._i),
+	_line(other._line), _column(other._column)
+{
 }
 
 Lexer &Lexer::operator=(const Lexer &other)
@@ -82,6 +96,8 @@ Lexer &Lexer::operator=(const Lexer &other)
 	{
 		this->_content = other._content;
 		this->_i = other._i;
+		this->_line = other._line;
+		this->_column = other._column;
 	}
 	return (*this);
 }

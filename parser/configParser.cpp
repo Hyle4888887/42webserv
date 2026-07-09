@@ -23,11 +23,20 @@ ServerConfig ConfigParser::parseServer(const std::vector<Token> &tokens, size_t 
 {
 	pos++;
 	ServerConfig server;
+	std::vector<std::string> doneOptions;
 	expect(tokens, pos, LBRACE);
 	while (tokens[pos].type != RBRACE)
 	{
+		for (auto option : doneOptions)
+		{
+			if (tokens[pos].value == option)
+				throw std::runtime_error(option + " can't be put twice");
+		}
 		if (tokens[pos].value == "listen")
+		{
 			parseListen(server, tokens, pos);
+			doneOptions.push_back("listen");
+		}
 		else if (tokens[pos].value == "server_name")
 		{
 			pos++;
@@ -36,6 +45,7 @@ ServerConfig ConfigParser::parseServer(const std::vector<Token> &tokens, size_t 
 			server.serverName = tokens[pos].value;
 			pos++;
 			expect(tokens, pos, SEMICOLON);
+			doneOptions.push_back("server_name");
 		}
 		else if (tokens[pos].value == "client_max_body_size")
 		{
@@ -43,6 +53,26 @@ ServerConfig ConfigParser::parseServer(const std::vector<Token> &tokens, size_t 
 			if (!isNumber(tokens[pos].value))
 				throw std::runtime_error("Number expected in client_max_body_size");
 			server.clientMaxBodySize = std::atoi(tokens[pos].value.c_str());
+			pos++;
+			expect(tokens, pos, SEMICOLON);
+			doneOptions.push_back("client_max_body_size");
+		}
+		else if (tokens[pos].value == "error_page")
+		{
+			pos++;
+			if (!isNumber(tokens[pos].value))
+				throw std::runtime_error("Number expected in error_page");
+			int error_code = std::atoi(tokens[pos].value.c_str());
+			if (server.errorPages.count(error_code))
+				throw std::runtime_error("Error code " + std::to_string(error_code) + " can't be put twice");
+			pos++;
+			if (!endsWith(tokens[pos].value, ".html"))
+				throw std::runtime_error("Error page " + std::to_string(error_code) + " must be a .html file");
+			std::ifstream file(tokens[pos].value);
+			if (!file)
+				throw std::runtime_error("HTML page for error_page " + std::to_string(error_code) + " not found");
+			file.close();
+			server.errorPages[error_code] = tokens[pos].value;
 			pos++;
 			expect(tokens, pos, SEMICOLON);
 		}
@@ -59,7 +89,6 @@ LocationConfig ConfigParser::parseLocation(const std::vector<Token> &tokens, siz
 void ConfigParser::parseListen(ServerConfig& server, const std::vector<Token> &tokens, size_t &pos)
 {
 	pos++;
-	std::cout << tokens[pos].value << std::endl;
 	if (tokens[pos].type != IDENTIFIER)
 		throw std::runtime_error("Expected a port or/and an IP address at listen");
 	size_t res = tokens[pos].value.find(':');
@@ -81,6 +110,13 @@ void ConfigParser::parseListen(ServerConfig& server, const std::vector<Token> &t
 	}
 	pos++;
 	expect(tokens, pos, SEMICOLON);
+}
+
+bool ConfigParser::endsWith(const std::string& fullString, const std::string& ending)
+{
+    if (ending.size() > fullString.size())
+        return false;
+    return fullString.compare(fullString.size() - ending.size(), ending.size(), ending) == 0;
 }
 
 bool ConfigParser::isNumber(const std::string& s)
@@ -134,9 +170,14 @@ ConfigParser::ConfigParser(const std::string &configFile)
 	Lexer lexer(buffer.str());
 	std::vector<Token> tokens = lexer.tokenize();
 	parse(tokens);
+	file.close();
 }
 
 ConfigParser::~ConfigParser()
 {
 }
 
+const Config &ConfigParser::getConfig() const
+{
+    return this->_config;
+}

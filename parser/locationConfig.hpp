@@ -5,9 +5,8 @@
 #include <vector>
 #include <map>
 
-class LocationConfig
+struct LocationConfig
 {
-public:
 	std::string path;
 	std::string root;
 	std::string index;

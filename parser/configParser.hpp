@@ -24,6 +24,7 @@ private:
 	LocationConfig parseLocation(const std::vector<Token>& tokens, size_t& pos);
 	void parseListen(ServerConfig& server, const std::vector<Token>& tokens, size_t& pos);
 
+	bool endsWith(const std::string& fullString, const std::string& ending);
 	bool isNumber(const std::string& s);
 	bool isIPv4(const std::string& s);
 	bool isValidPort(const std::string& s);
@@ -31,6 +32,8 @@ private:
 public:
 	ConfigParser(const std::string& configFile);
 	~ConfigParser();
+
+	const Config& getConfig() const;
 };
 
 #endif

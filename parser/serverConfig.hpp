@@ -6,9 +6,8 @@
 #include <map>
 #include "locationConfig.hpp"
 
-class ServerConfig
+struct ServerConfig
 {
-public:
 	std::string host;
 	int port;
 	std::string serverName;

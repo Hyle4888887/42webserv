@@ -3,26 +3,6 @@
 
 int main(int argc, char **argv)
 {
-    // if (argc != 2)
-    //     return (1);
-
-    // std::ifstream file(argv[1]);
-
-    // std::stringstream buffer;
-    // buffer << file.rdbuf();
-
-    // Lexer lexer(buffer.str());
-
-    // std::vector<Token> tokens = lexer.tokenize();
-
-    // for (size_t i = 0; i < tokens.size(); i++)
-    // {
-    //     std::cout << tokens[i].type
-    //               << " : "
-    //               << tokens[i].value
-    //               << std::endl;
-    // }
-
     if (argc != 2)
     {
         std::cerr << "Usage: " << argv[0] << " <config_file>" << std::endl;
@@ -34,6 +14,13 @@ int main(int argc, char **argv)
         ConfigParser parser(argv[1]);
 
         std::cout << "Configuration parsed successfully!" << std::endl;
+
+        const Config& config = parser.getConfig();
+        std::cout << config.servers[0].host << std::endl;
+        std::cout << config.servers[0].port << std::endl;
+        std::cout << config.servers[0].serverName << std::endl;
+        std::cout << config.servers[0].clientMaxBodySize << std::endl;
+        std::cout << config.servers[0].errorPages.at(404) << std::endl;
     }
     catch (const std::exception &e)
     {

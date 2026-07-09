@@ -4,7 +4,7 @@
 #include <vector>
 #include "serverConfig.hpp"
 
-class Config
+struct Config
 {
 public:
 	std::vector<ServerConfig> servers;

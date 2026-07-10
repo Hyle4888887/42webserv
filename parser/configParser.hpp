@@ -7,6 +7,7 @@
 #include <string>
 #include <map>
 #include <vector>
+#include <unistd.h>
 #include "lexer.hpp"
 #include "config.hpp"
 #include "serverConfig.hpp"

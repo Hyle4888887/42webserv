@@ -15,7 +15,7 @@ server {
 
 		autoindex off;
 
-		upload_dir ./uploads;
+		upload_dir on ./uploads;
 
 		cgi .php /usr/bin/php-cgi;
 	}

@@ -12,8 +12,11 @@ struct LocationConfig
 	std::string index;
 	bool autoIndex;
 	std::vector<std::string> allowedMethods;
+	bool uploadEnabled;
 	std::string uploadDir;
-	std::string redirect;
+	bool hasRedirect;
+	int redirectCode;
+	std::string redirectURL;
 	std::map<std::string, std::string> cgi;
 };
 

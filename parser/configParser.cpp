@@ -31,206 +31,39 @@ ServerConfig ConfigParser::parseServer(const std::vector<Token> &tokens, size_t 
 {
 	pos++;
 	ServerConfig server;
-	std::vector<std::string> doneOptions;
+	serverInit(server);
+	std::set<std::string> doneOptions;
 	expect(tokens, pos, LBRACE);
 	pos++;
 	while (tokens[pos].type != RBRACE)
 	{
+		std::string directive = tokens[pos].value;
 		expect(tokens, pos, IDENTIFIER);
-		for (auto option : doneOptions)
-		{
-			if (tokens[pos].value == option)
-				error(tokens[pos], "'" + option + "' already present, no duplicate allowed");
-		}
-		if (tokens[pos].value == "listen")
-		{
-			parseListen(server, tokens, pos);
-			doneOptions.push_back("listen");
-		}
-		else if (tokens[pos].value == "server_name")
-		{
-			pos++;
-			expect(tokens, pos, IDENTIFIER);
-			server.serverName = tokens[pos].value;
-			pos++;
-			expect(tokens, pos, SEMICOLON);
-			pos++;
-			doneOptions.push_back("server_name");
-		}
-		else if (tokens[pos].value == "client_max_body_size")
-		{
-			pos++;
-			if (!isNumber(tokens[pos].value))
-				error(tokens[pos], "Number expected in 'client_max_body_size'");
-			server.clientMaxBodySize = std::atoi(tokens[pos].value.c_str());
-			pos++;
-			expect(tokens, pos, SEMICOLON);
-			pos++;
-			doneOptions.push_back("client_max_body_size");
-		}
-		else if (tokens[pos].value == "error_page")
-		{
-			pos++;
-			expect(tokens, pos, IDENTIFIER);
-			if (!isNumber(tokens[pos].value))
-				error(tokens[pos], "Number expected in 'error_page'");
-			int error_code = std::atoi(tokens[pos].value.c_str());
-			if (server.errorPages.count(error_code))
-				error(tokens[pos], "Error code " + std::to_string(error_code) + " already present, no duplicate allowed");
-			pos++;
-			expect(tokens, pos, IDENTIFIER);
-			if (!endsWith(tokens[pos].value, ".html"))
-				error(tokens[pos], "Error page " + std::to_string(error_code) + " must be a .html file");
-			if (!access(tokens[pos].value.c_str(), F_OK))
-				error(tokens[pos], "This 'error_page' file doesn't exist : " + tokens[pos].value);
-			if (!access(tokens[pos].value.c_str(), X_OK))
-				error(tokens[pos], "This 'error_page' file cannot be executed : " + tokens[pos].value);
-			server.errorPages[error_code] = tokens[pos].value;
-			pos++;
-			expect(tokens, pos, SEMICOLON);
-			pos++;
-		}
-		else if (tokens[pos].value == "location")
+		if (directive == "location")
 			server.locations.push_back(parseLocation(tokens, pos));
 		else
-			error(tokens[pos], "Unexpected : '" + tokens[pos].value + "'");
+		{
+			if (directive != "error_page")
+			{
+				if (!doneOptions.insert(directive).second)
+					error(tokens[pos], "'" + directive + "' already present");
+			}
+			std::map<std::string, ServerParser>::iterator it = _serverParsers.find(directive);
+			if (it == _serverParsers.end())
+				error(tokens[pos], "Unknown directive '" + directive + "'");
+			(this->*(it->second))(server, tokens, pos);
+		}
 	}
 	pos++;
 	return server;
 }
 
-LocationConfig ConfigParser::parseLocation(const std::vector<Token> &tokens, size_t &pos)
+void ConfigParser::serverInit(ServerConfig &server)
 {
-	pos++;
-	LocationConfig location;
-	std::vector<std::string> doneOptions;
-	expect(tokens, pos, IDENTIFIER);
-	location.path = tokens[pos].value;
-	pos++;
-	expect(tokens, pos, LBRACE);
-	pos++;
-	while (tokens[pos].type != RBRACE)
-	{
-		expect(tokens, pos, IDENTIFIER);
-		for (auto option : doneOptions)
-		{
-			if (tokens[pos].value == option)
-				error(tokens[pos], "'" + option + "' already present, no duplicate allowed");
-		}
-		if (tokens[pos].value == "root")
-		{
-			pos++;
-			expect(tokens, pos, IDENTIFIER);
-			location.root = tokens[pos].value;
-			pos++;
-			expect(tokens, pos, SEMICOLON);
-			pos++;
-			doneOptions.push_back("root");
-		}
-		else if (tokens[pos].value == "index")
-		{
-			pos++;
-			expect(tokens, pos, IDENTIFIER);
-			if (!endsWith(tokens[pos].value, ".html"))
-				error(tokens[pos], "'index' must be a .html file");
-			if (!access(tokens[pos].value.c_str(), F_OK))
-				error(tokens[pos], "This 'index' file doesn't exist : " + tokens[pos].value);
-			if (!access(tokens[pos].value.c_str(), X_OK))
-				error(tokens[pos], "This 'index' file cannot be executed : " + tokens[pos].value);
-			location.index = tokens[pos].value;
-			pos++;
-			expect(tokens, pos, SEMICOLON);
-			pos++;
-			doneOptions.push_back("index");
-		}
-		else if (tokens[pos].value == "allowed_methods")
-		{
-			pos++;
-			expect(tokens, pos, IDENTIFIER);
-			while (tokens[pos].type != SEMICOLON)
-			{
-				expect(tokens, pos, IDENTIFIER);
-				for (auto method : location.allowedMethods)
-				{
-					if (method == tokens[pos].value)
-						error(tokens[pos], "'" + method + "' already present, no duplicate allowed");
-				}
-				if (tokens[pos].value == "GET" || tokens[pos].value == "POST" || tokens[pos].value == "DELETE")
-					location.allowedMethods.push_back(tokens[pos].value);
-				else
-					error(tokens[pos], "Method '" + tokens[pos].value + "' unknown");
-				pos++;
-			}
-			pos++;
-			doneOptions.push_back("allowed_methods");
-		}
-		else if (tokens[pos].value == "autoindex")
-		{
-			pos++;
-			expect(tokens, pos, IDENTIFIER);
-			if (tokens[pos].value == "on")
-				location.autoIndex = true;
-			else if (tokens[pos].value == "off")
-				location.autoIndex = false;
-			else
-				error(tokens[pos], "Only accepted parameters for 'autoindex' are 'on' or 'off'");
-			pos++;
-			expect(tokens, pos, SEMICOLON);
-			pos++;
-			doneOptions.push_back("autoindex");
-		}
-		else if (tokens[pos].value == "upload_dir")
-		{
-			pos++;
-			expect(tokens, pos, IDENTIFIER);
-			location.uploadDir = tokens[pos].value;
-			pos++;
-			expect(tokens, pos, SEMICOLON);
-			pos++;
-			doneOptions.push_back("upload_dir");
-		}
-		else if (tokens[pos].value == "cgi")
-		{
-			pos++;
-			expect(tokens, pos, IDENTIFIER);
-			if (tokens[pos].value[0] != '.' || tokens[pos].value == ".")
-				error(tokens[pos], "'cgi' first parameter must be an extension");
-			if (location.cgi.count(tokens[pos].value))
-				error(tokens[pos], "Extension duplicate for 'cgi' : " + tokens[pos].value);
-			std::string cgi_extension = tokens[pos].value;
-			pos++;
-			expect(tokens, pos, IDENTIFIER);
-			if (!access(tokens[pos].value.c_str(), F_OK))
-				error(tokens[pos], "This 'cgi' interpreter doesn't exist : " + tokens[pos].value);
-			if (!access(tokens[pos].value.c_str(), X_OK))
-				error(tokens[pos], "This 'cgi' interpreter cannot be executed : " + tokens[pos].value);
-			location.cgi[cgi_extension] = tokens[pos].value;
-			pos++;
-			expect(tokens, pos, SEMICOLON);
-			pos++;
-		}
-		else if (tokens[pos].value == "return")
-		{
-			pos++;
-			expect(tokens, pos, IDENTIFIER);
-			if (!isNumber(tokens[pos].value))
-				error(tokens[pos], "First argument of 'return' must be a number");
-			location.hasRedirect = true;
-			location.redirectCode = std::atoi(tokens[pos].value.c_str());
-			pos++;
-			if (tokens[pos].type == SEMICOLON && location.redirectCode >= 300 && location.redirectCode <= 399)
-				error(tokens[pos], "Return code between 300 and 399 must have a redirection path in second argument of 'return'");
-			if (tokens[pos].type == IDENTIFIER)
-			{
-				location.redirectURL = tokens[pos].value;
-				pos++;
-			}
-			expect(tokens, pos, SEMICOLON);
-			pos++;
-		}
-		else
-			error(tokens[pos], "Unexpected : '" + tokens[pos].value + "'");
-	}
+	server.host = "0.0.0.0";
+	server.port = 80;
+	server.serverName = "";
+	server.clientMaxBodySize = 1048576;
 }
 
 void ConfigParser::parseListen(ServerConfig& server, const std::vector<Token> &tokens, size_t &pos)
@@ -255,6 +88,213 @@ void ConfigParser::parseListen(ServerConfig& server, const std::vector<Token> &t
 		server.port = std::atoi(tokens[pos].value.c_str());
 	}
 	pos++;
+	expect(tokens, pos, SEMICOLON);
+	pos++;
+}
+
+void ConfigParser::parseServerName(ServerConfig &server, const std::vector<Token> &tokens, size_t &pos)
+{
+	pos++;
+	expect(tokens, pos, IDENTIFIER);
+	server.serverName = tokens[pos].value;
+	pos++;
+	expect(tokens, pos, SEMICOLON);
+	pos++;
+}
+
+void ConfigParser::parseClientMaxBodySize(ServerConfig &server, const std::vector<Token> &tokens, size_t &pos)
+{
+	pos++;
+	if (!isNumber(tokens[pos].value))
+		error(tokens[pos], "Number expected in 'client_max_body_size'");
+	server.clientMaxBodySize = std::atoi(tokens[pos].value.c_str());
+	pos++;
+	expect(tokens, pos, SEMICOLON);
+	pos++;
+}
+
+void ConfigParser::parseErrorPage(ServerConfig &server, const std::vector<Token> &tokens, size_t &pos)
+{
+	pos++;
+	expect(tokens, pos, IDENTIFIER);
+	if (!isNumber(tokens[pos].value))
+		error(tokens[pos], "Number expected in 'error_page'");
+	int error_code = std::atoi(tokens[pos].value.c_str());
+	if (server.errorPages.count(error_code))
+		error(tokens[pos], "Error code " + std::to_string(error_code) + " already present, no duplicate allowed");
+	pos++;
+	expect(tokens, pos, IDENTIFIER);
+	if (!endsWith(tokens[pos].value, ".html"))
+		error(tokens[pos], "Error page " + std::to_string(error_code) + " must be a .html file");
+	if (!access(tokens[pos].value.c_str(), F_OK))
+		error(tokens[pos], "This 'error_page' file doesn't exist : " + tokens[pos].value);
+	if (!access(tokens[pos].value.c_str(), X_OK))
+		error(tokens[pos], "This 'error_page' file cannot be executed : " + tokens[pos].value);
+	server.errorPages[error_code] = tokens[pos].value;
+	pos++;
+	expect(tokens, pos, SEMICOLON);
+	pos++;
+}
+
+LocationConfig ConfigParser::parseLocation(const std::vector<Token> &tokens, size_t &pos)
+{
+	pos++;
+	LocationConfig location;
+	locationInit(location);
+	std::set<std::string> doneOptions;
+	expect(tokens, pos, IDENTIFIER);
+	location.path = tokens[pos].value;
+	pos++;
+	expect(tokens, pos, LBRACE);
+	pos++;
+	while (tokens[pos].type != RBRACE)
+	{
+		expect(tokens, pos, IDENTIFIER);
+		std::string directive = tokens[pos].value;
+		if (directive != "cgi")
+		{
+			if (!doneOptions.insert(directive).second)
+    			error(tokens[pos], "'" + directive + "' already present");
+		}
+		std::map<std::string, LocationParser>::iterator it = _locationParsers.find(directive);
+		if (it == _locationParsers.end())
+			error(tokens[pos], "Unknown directive '" + directive + "'");
+		(this->*(it->second))(location, tokens, pos);
+	}
+	pos++;
+	return location;
+}
+
+void ConfigParser::locationInit(LocationConfig &location)
+{
+	location.root = "./";
+	location.index = "index.html";
+	location.allowedMethods.push_back("GET");
+	location.autoIndex = false;
+	location.uploadEnabled = false;
+	location.uploadDir = "";
+	location.hasRedirect = false;
+	location.path = "/";
+}
+
+void ConfigParser::parseRoot(LocationConfig &location, const std::vector<Token> &tokens, size_t &pos)
+{
+	pos++;
+	expect(tokens, pos, IDENTIFIER);
+	location.root = tokens[pos].value;
+	pos++;
+	expect(tokens, pos, SEMICOLON);
+	pos++;
+}
+
+void ConfigParser::parseIndex(LocationConfig &location, const std::vector<Token> &tokens, size_t &pos)
+{
+	pos++;
+	expect(tokens, pos, IDENTIFIER);
+	if (!endsWith(tokens[pos].value, ".html"))
+		error(tokens[pos], "'index' must be a .html file");
+	if (!access(tokens[pos].value.c_str(), F_OK))
+		error(tokens[pos], "This 'index' file doesn't exist : " + tokens[pos].value);
+	if (!access(tokens[pos].value.c_str(), X_OK))
+		error(tokens[pos], "This 'index' file cannot be executed : " + tokens[pos].value);
+	location.index = tokens[pos].value;
+	pos++;
+	expect(tokens, pos, SEMICOLON);
+	pos++;
+}
+
+void ConfigParser::parseAllowedMethods(LocationConfig &location, const std::vector<Token> &tokens, size_t &pos)
+{
+	pos++;
+	expect(tokens, pos, IDENTIFIER);
+	location.allowedMethods.clear();
+	while (tokens[pos].type != SEMICOLON)
+	{
+		expect(tokens, pos, IDENTIFIER);
+		for (auto method : location.allowedMethods)
+		{
+			if (method == tokens[pos].value)
+				error(tokens[pos], "'" + method + "' already present, no duplicate allowed");
+		}
+		if (tokens[pos].value == "GET" || tokens[pos].value == "POST" || tokens[pos].value == "DELETE")
+			location.allowedMethods.push_back(tokens[pos].value);
+		else
+			error(tokens[pos], "Method '" + tokens[pos].value + "' unknown");
+		pos++;
+	}
+	pos++;
+}
+
+void ConfigParser::parseAutoIndex(LocationConfig &location, const std::vector<Token> &tokens, size_t &pos)
+{
+	pos++;
+	expect(tokens, pos, IDENTIFIER);
+	if (tokens[pos].value == "on")
+		location.autoIndex = true;
+	else if (tokens[pos].value == "off")
+		location.autoIndex = false;
+	else
+		error(tokens[pos], "Only accepted parameters for 'autoindex' are 'on' or 'off'");
+	pos++;
+	expect(tokens, pos, SEMICOLON);
+	pos++;
+}
+
+void ConfigParser::parseUploadDir(LocationConfig &location, const std::vector<Token> &tokens, size_t &pos)
+{
+	pos++;
+	expect(tokens, pos, IDENTIFIER);
+	if (tokens[pos].value == "on")
+		location.uploadEnabled = true;
+	else if (tokens[pos].value == "off")
+		location.uploadEnabled = false;
+	else
+		error(tokens[pos], "Only accepted first parameter for 'upload_dir' are 'on' or 'off'");
+	pos++;
+	expect(tokens, pos, IDENTIFIER);
+	location.uploadDir = tokens[pos].value;
+	pos++;
+	expect(tokens, pos, SEMICOLON);
+	pos++;
+}
+
+void ConfigParser::parseCgi(LocationConfig &location, const std::vector<Token> &tokens, size_t &pos)
+{
+	pos++;
+	expect(tokens, pos, IDENTIFIER);
+	if (tokens[pos].value[0] != '.' || tokens[pos].value == ".")
+		error(tokens[pos], "'cgi' first parameter must be an extension");
+	if (location.cgi.count(tokens[pos].value))
+		error(tokens[pos], "Extension duplicate for 'cgi' : " + tokens[pos].value);
+	std::string cgi_extension = tokens[pos].value;
+	pos++;
+	expect(tokens, pos, IDENTIFIER);
+	if (!access(tokens[pos].value.c_str(), F_OK))
+		error(tokens[pos], "This 'cgi' interpreter doesn't exist : " + tokens[pos].value);
+	if (!access(tokens[pos].value.c_str(), X_OK))
+		error(tokens[pos], "This 'cgi' interpreter cannot be executed : " + tokens[pos].value);
+	location.cgi[cgi_extension] = tokens[pos].value;
+	pos++;
+	expect(tokens, pos, SEMICOLON);
+	pos++;
+}
+
+void ConfigParser::parseReturn(LocationConfig &location, const std::vector<Token> &tokens, size_t &pos)
+{
+	pos++;
+	expect(tokens, pos, IDENTIFIER);
+	if (!isNumber(tokens[pos].value))
+		error(tokens[pos], "First argument of 'return' must be a number");
+	location.hasRedirect = true;
+	location.redirectCode = std::atoi(tokens[pos].value.c_str());
+	pos++;
+	if (tokens[pos].type == SEMICOLON && location.redirectCode >= 300 && location.redirectCode <= 399)
+		error(tokens[pos], "Return code between 300 and 399 must have a redirection path in second argument of 'return'");
+	if (tokens[pos].type == IDENTIFIER)
+	{
+		location.redirectURL = tokens[pos].value;
+		pos++;
+	}
 	expect(tokens, pos, SEMICOLON);
 	pos++;
 }
@@ -309,6 +349,19 @@ bool ConfigParser::isValidPort(const std::string &s)
 
 ConfigParser::ConfigParser(const std::string &configFile)
 {
+	_serverParsers["listen"] = &ConfigParser::parseListen;
+	_serverParsers["server_name"] = &ConfigParser::parseServerName;
+	_serverParsers["client_max_body_size"] = &ConfigParser::parseClientMaxBodySize;
+	_serverParsers["error_page"] = &ConfigParser::parseErrorPage;
+
+	_locationParsers["root"] = &ConfigParser::parseRoot;
+	_locationParsers["index"] = &ConfigParser::parseIndex;
+	_locationParsers["allowed_methods"] = &ConfigParser::parseAllowedMethods;
+	_locationParsers["autoindex"] = &ConfigParser::parseAutoIndex;
+	_locationParsers["upload_dir"] = &ConfigParser::parseUploadDir;
+	_locationParsers["cgi"] = &ConfigParser::parseCgi;
+	_locationParsers["return"] = &ConfigParser::parseReturn;
+
 	std::ifstream file(configFile.c_str());
 	if (!file)
 		throw std::runtime_error("Config file does not exist, or could not be opened");

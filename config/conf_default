@@ -25,7 +25,7 @@ server {
 
 		allowed_methods GET POST;
 
-		upload_dir ./uploads;
+		upload_dir on ./uploads;
 		autoindex on;
 	}
 

@@ -9,6 +9,7 @@
 #include <vector>
 #include <set>
 #include <unistd.h>
+#include <bits/stdc++.h>
 #include "lexer.hpp"
 #include "config.hpp"
 #include "serverConfig.hpp"
@@ -56,7 +57,7 @@ private:
 
 	bool endsWith(const std::string& fullString, const std::string& ending);
 	bool isNumber(const std::string& s);
-	bool isIPv4(const std::string& s);
+	bool isIPv4(const std::string& ip);
 	bool isValidPort(const std::string& s);
 
 public:

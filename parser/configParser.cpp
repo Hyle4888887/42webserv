@@ -70,22 +70,32 @@ void ConfigParser::parseListen(ServerConfig& server, const std::vector<Token> &t
 {
 	pos++;
 	expect(tokens, pos, IDENTIFIER);
+	if (std::count(tokens[pos].value.begin(), tokens[pos].value.end(), ':') > 1)
+    	error(tokens[pos], "Invalid listen format");
 	size_t res = tokens[pos].value.find(':');
-	if (res != std::string::npos)
+	std::string left = tokens[pos].value.substr(0, res);
+	std::string right = tokens[pos].value.substr(res + 1);
+	if (res == std::string::npos)
 	{
-		if (!isIPv4(tokens[pos].value.substr(0, res)))
-			error(tokens[pos], "Wrong IP address provided in listen");
-		server.host = tokens[pos].value.substr(0, res);
-		if (!isValidPort(tokens[pos].value.substr(res + 1)))
-			error(tokens[pos], "Port is empty or out of range");
-		server.port = std::atoi(tokens[pos].value.substr(res + 1).c_str());
+		if (isValidPort(tokens[pos].value))
+			server.port = std::atoi(tokens[pos].value.c_str());
+		else if (isIPv4(tokens[pos].value))
+			error(tokens[pos], "Missing port after IP address");
+		else
+			error(tokens[pos], "Expected a port or an IP:port pair");
 	}
 	else
 	{
-		server.host = "0.0.0.0";
-		if (!isValidPort(tokens[pos].value))
-			error(tokens[pos], "Port is empty or out of range");
-		server.port = std::atoi(tokens[pos].value.c_str());
+		if (left.empty())
+			error(tokens[pos], "Missing IP address before ':'");
+		if (right.empty())
+			error(tokens[pos], "Missing port after ':'");
+		if (!isIPv4(left))
+			error(tokens[pos], "Invalid IP address");
+		if (!isValidPort(right))
+			error(tokens[pos], "Invalid port");
+		server.host = left;
+		server.port = std::atoi(right.c_str());
 	}
 	pos++;
 	expect(tokens, pos, SEMICOLON);
@@ -107,6 +117,8 @@ void ConfigParser::parseClientMaxBodySize(ServerConfig &server, const std::vecto
 	pos++;
 	if (!isNumber(tokens[pos].value))
 		error(tokens[pos], "Number expected in 'client_max_body_size'");
+	if (tokens[pos].value[0] == '-')
+		error(tokens[pos], "'client_max_body_size' must be positive");
 	server.clientMaxBodySize = std::atoi(tokens[pos].value.c_str());
 	pos++;
 	expect(tokens, pos, SEMICOLON);
@@ -312,13 +324,15 @@ bool ConfigParser::isNumber(const std::string& s)
 		return false;
 	for (size_t i = 0; i < s.size(); i++)
 	{
+		if (i == 0 && s[i] == '-')
+			continue;
 		if (!std::isdigit(static_cast<unsigned char>(s[i])))
 			return false;
 	}
 	return true;
 }
 
-bool ConfigParser::isIPv4(const std::string &s)
+bool ConfigParser::isIPv4(const std::string& s)
 {
 	std::stringstream ss(s);
 	std::string token;
@@ -337,9 +351,11 @@ bool ConfigParser::isIPv4(const std::string &s)
 	return true;
 }
 
-bool ConfigParser::isValidPort(const std::string &s)
+bool ConfigParser::isValidPort(const std::string& s)
 {
 	if (s.empty())
+		return false;
+	if (!isNumber(s))
 		return false;
 	int n = std::atoi(s.c_str());
 	if (n < 1 || n > 65535)

@@ -35,15 +35,27 @@
     - Write the README.md (description, instructions, resources, and AI usage disclosure).
 
 **Description:**
+- The Webserv project involves designing and implementing, as a team and in C++98, a complete HTTP server — non-blocking network management with a single poll(), request parsing, NGINX-style configuration, GET/POST/DELETE methods, and execution of CGI scripts — while respecting strict constraints of robustness, performance and compliance with the HTTP protocol.
+- The goal of this project is to deepen our understanding of the HTTP protocol and low-level network programming by implementing core web server functionality without relying on any external libraries. The server supports the GET, POST, and DELETE methods, serves static websites, allows file uploads, and can execute CGI scripts (such as Python). It is configured via an NGINX-inspired configuration file, which defines listening ports, routes, error pages, and per-route rules such as allowed methods, redirections, and directory listing.
+- The project emphasizes reliability and performance: it must remain non-blocking at all times, never crash under any circumstances, and stay compatible with standard web browsers and tools like curl and telnet.
 
 **Instructions:**
+- make
+- ./webserv
+- open new terminal
+- telnet localhost 8080
+- GET / HTTP/1.1 Host: localhost
+- curl http://localhost:8080
+- curl http://localhost:8080/redirection
 
 **Resources:**
--   cmd:man
--   ibm.com
--   cplusplus.com
+- cmd:man
+- ibm.com
+- cplusplus.com
+- https://contabo.com/blog/http-response-codes-server-statuses/?utm_source=google&utm_medium=cpc&utm_campaign=brand-pmax-global&utm_term=&utm_content=&gad_source=1&gad_campaignid=23237090875&gbraid=0AAAAAD_Qy-fg_Km4x4kTjqANuto9M8HXt&gclid=CjwKCAjwuanRBhBSEiwAY5y6V6aK9XyHYQwTdtUixaY-O5vlLe97PXhMLGKYXuAfpI-5Ss6uo5XO2RoC4DQQAvD_BwE#418-im-a-teapot-45
 
 **Additional things:**
 -   Use Ai to :
     - Verify some test i did before starting the project.
-    - Start somwhere else with a guide without coding.
+    - Start somwhere else with a guide without ai coding for me.
+    - Verify any bads things in the code even if it compile.

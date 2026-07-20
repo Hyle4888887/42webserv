@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   server.cpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: mpoirier <mpoirier@student.42nice.fr>      +#+  +:+       +#+        */
+/*   By: bozil <bozil@student.42.fr>                +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/06/02 12:51:56 by bozil             #+#    #+#             */
-/*   Updated: 2026/06/09 14:11:09 by mpoirier         ###   ########.fr       */
+/*   Updated: 2026/06/10 11:07:51 by bozil            ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,6 +14,14 @@
 
 Server::Server()
 {
+	RouteConfig rootRoute;
+	rootRoute.root = ".";
+	rootRoute.index = "index.html";
+	rootRoute.dirListing = true;
+	rootRoute.allowedMethods.push_back("GET");
+	rootRoute.allowedMethods.push_back("POST");
+	rootRoute.allowedMethods.push_back("DELETE");
+	_config.routes["/"] = rootRoute;
 }
 
 Server::~Server()
@@ -38,7 +46,7 @@ void Server::run()
  
 		if (ready < 0)
 		{
-			if (errno == EINTR) // signal recu = recommencer le poll
+			if (errno == EINTR)
 				continue;
 			std::cerr << "poll: " << std::strerror(errno) << std::endl;
 			break;
@@ -65,7 +73,6 @@ void Server::run()
 				continue;
 			}
  
-			// Detecte la deconnexion propre plus tot que recv() == 0
 			if (!isListener(fd) && (revents & POLLRDHUP))
 			{
 				std::cout << "[-] POLLRDHUP fd=" << fd << std::endl;
@@ -73,7 +80,6 @@ void Server::run()
 				continue;
 			}
  
-			// Nouvelle connexion
 			if (isListener(fd))
 				handleNewConnection(fd);
 			else if (isCGIFd(fd))
@@ -81,11 +87,9 @@ void Server::run()
 				if (revents & POLLIN) { handleCGIRead(i); }
 				else if (revents & POLLOUT) { handleCGIWrite(i); }
 			}
-			// Donnees a lire
 			else if (revents & POLLIN)
 				handleRead(i);
- 
-			// Pret a envoyer la reponse
+
 			else if (revents & POLLOUT)
 				handleWrite(i);
 			compactPollFds();
@@ -93,12 +97,11 @@ void Server::run()
 	}
 }
 
-/*supprime un client -- A ete modifie */
+/*supprime un client */
 void	Server::closeClient(std::size_t index)
 {
 	int	fd = _pollFds[index].fd;
 
-	// 1. si le client avait un CGI en cours, on nettoie le CGI d'abord
 	std::map<int, Client>::iterator	it = _clients.find(fd);
 	if (it != _clients.end() && it->second.CGIActive)
 	{
@@ -122,8 +125,7 @@ void	Server::closeClient(std::size_t index)
 		}
 	}
 
-	// 2. fermeture du client
 	close(fd);
 	_clients.erase(fd);
-	_pollFds[index].fd = -1;   // <-- au lieu de _pollFds.erase(...)
+	_pollFds[index].fd = -1;
 }

@@ -3,14 +3,14 @@
 /*                                                        :::      ::::::::   */
 /*   response.cpp                                       :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: bozil <bozil@student.42.fr>                +#+  +:+       +#+        */
+/*   By: mpoirier <mpoirier@student.42nice.fr>      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/06/10 10:45:23 by bozil             #+#    #+#             */
-/*   Updated: 2026/06/11 14:43:46 by bozil            ###   ########.fr       */
+/*   Updated: 2026/06/11 15:19:24 by mpoirier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "HTTP.cpp"
+#include "HTTP.hpp"
 
 std::string Response::statusText(int code)
 {

@@ -6,11 +6,11 @@
 /*   By: mpoirier <mpoirier@student.42nice.fr>      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/06/10 10:34:11 by bozil             #+#    #+#             */
-/*   Updated: 2026/06/11 14:15:37 by mpoirier         ###   ########.fr       */
+/*   Updated: 2026/06/11 15:19:15 by mpoirier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "HTTP.cpp"
+#include "HTTP.hpp"
 
 // sert a resoudre le path URL en path systeme de fichier en fonction de la config de la route
 std::string Response::handleGET(const Request &req, const RouteConfig &route, const ServerConfig &config)

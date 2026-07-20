@@ -6,7 +6,7 @@
 /*   By: mpoirier <mpoirier@student.42nice.fr>      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/06/10 10:21:45 by bozil             #+#    #+#             */
-/*   Updated: 2026/06/11 15:02:49 by mpoirier         ###   ########.fr       */
+/*   Updated: 2026/06/11 15:14:39 by mpoirier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -40,20 +40,6 @@ std::string Response::readFile(const std::string &path, bool &ok)
     if (f.bad()) { ok = false; return ""; }
     ok = true;
     return oss.str();
-}
-
-static std::string errorBody(const std::string code, const std::string status)
-{
-    std::string res;
-    res += "<html><head><title>" + code + " " + status + "</title></head>";
-    res += "<body style=\"text-align:center; font-family:sans-serif; margin-top:50px;\">";
-    res += "<h1>" + code + " " + status + "</h1>";
-    res += "<img src=\"https://http.cat/" + code + ".jpg\" ";
-    res += "alt=\"" + code + " " + status + "\" ";
-    res += "onerror=\"this.style.display='none';\" ";
-    res += "style=\"max-width:600px; width:90%;\" />";
-    res += "</body></html>";
-    return res;
 }
 
 std::string Response::errorResponse(int code, const ServerConfig &config)

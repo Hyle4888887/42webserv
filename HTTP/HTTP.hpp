@@ -6,7 +6,7 @@
 /*   By: mpoirier <mpoirier@student.42nice.fr>      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/06/10 10:22:11 by bozil             #+#    #+#             */
-/*   Updated: 2026/06/11 14:25:24 by mpoirier         ###   ########.fr       */
+/*   Updated: 2026/06/11 15:15:01 by mpoirier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -52,3 +52,5 @@ class Response
     static std::string        errorResponse(int code, const ServerConfig &config);
     static std::string        statusText(int code);
 };
+
+std::string errorBody(const std::string code, const std::string status);

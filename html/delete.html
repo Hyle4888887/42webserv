@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>DELETE Test</title>
+  <style>
+    body { font-family: sans-serif; max-width: 700px; margin: 60px auto; color: #222; background: #f9f9f9; }
+    input[type="text"] { width: 100%; padding: 8px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px; margin: 8px 0 16px; font-size: 15px; }
+    button { background: #cc2200; color: white; border: none; padding: 10px 24px; border-radius: 4px; cursor: pointer; font-size: 15px; }
+    button:hover { background: #aa1a00; }
+    #result { margin-top: 20px; padding: 14px; border-radius: 4px; display: none; font-size: 15px; }
+    .ok  { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+    .err { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+    a { color: #0066cc; }
+  </style>
+</head>
+<body>
+  <h1>🗑️ DELETE Test</h1>
+  <p>Entre le chemin d'un fichier à supprimer (ex: <code>/uploads/test.txt</code>), puis clique sur le bouton.<br>
+  Le navigateur envoie une requête <strong>DELETE</strong> via JavaScript.</p>
+
+  <label><strong>Chemin du fichier :</strong></label>
+  <input type="text" id="path" value="/uploads/" placeholder="/uploads/monfichier.txt">
+  <button onclick="doDelete()">Supprimer</button>
+
+  <div id="result"></div>
+
+  <script>
+    function doDelete() {
+      var path = document.getElementById('path').value.trim();
+      var result = document.getElementById('result');
+      if (!path) { alert('Entre un chemin.'); return; }
+
+      fetch(path, { method: 'DELETE' })
+        .then(function(res) {
+          result.style.display = 'block';
+          if (res.ok || res.status === 204) {
+            result.className = 'ok';
+            result.textContent = '✅ Supprimé — HTTP ' + res.status;
+          } else {
+            result.className = 'err';
+            result.textContent = '❌ Erreur — HTTP ' + res.status;
+          }
+        })
+        .catch(function(err) {
+          result.style.display = 'block';
+          result.className = 'err';
+          result.textContent = '❌ Erreur réseau : ' + err;
+        });
+    }
+  </script>
+
+  <p style="margin-top:30px"><a href="/index.html">← Retour à l'accueil</a></p>
+</body>
+</html>

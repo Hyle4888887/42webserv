@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Upload Test</title>
+  <style>
+    body { font-family: sans-serif; max-width: 700px; margin: 60px auto; color: #222; background: #f9f9f9; }
+    form { background: #fff; border: 1px solid #ddd; border-radius: 6px; padding: 24px; margin-top: 20px; }
+    input[type="file"] { display: block; margin: 12px 0; }
+    input[type="text"] { width: 100%; padding: 8px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px; margin: 8px 0 16px; }
+    button { background: #0066cc; color: white; border: none; padding: 10px 24px; border-radius: 4px; cursor: pointer; font-size: 15px; }
+    button:hover { background: #0052a3; }
+    a { color: #0066cc; }
+    .note { font-size: 13px; color: #666; margin-top: 8px; }
+  </style>
+</head>
+<body>
+  <h1>📤 Upload de fichier</h1>
+  <p>Ce formulaire envoie une requête <strong>POST multipart/form-data</strong> au serveur.</p>
+
+  <form action="/uploads" method="POST" enctype="multipart/form-data">
+    <label><strong>Fichier à uploader :</strong></label>
+    <input type="file" name="file">
+    <p class="note">Le fichier sera stocké dans le dossier <code>uploads/</code> du serveur.</p>
+    <button type="submit">Envoyer</button>
+  </form>
+
+  <h2>📝 Upload de texte brut</h2>
+  <form action="/uploads" method="POST" enctype="application/x-www-form-urlencoded">
+    <label><strong>Contenu texte :</strong></label>
+    <input type="text" name="data" placeholder="Hello webserv!">
+    <button type="submit">Envoyer</button>
+  </form>
+
+  <p><a href="/index.html">← Retour à l'accueil</a></p>
+</body>
+</html>

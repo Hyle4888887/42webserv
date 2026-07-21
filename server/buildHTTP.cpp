@@ -1,15 +1,3 @@
-/* ************************************************************************** */
-/*                                                                            */
-/*                                                        :::      ::::::::   */
-/*   buildHTTP.cpp                                      :+:      :+:    :+:   */
-/*                                                    +:+ +:+         +:+     */
-/*   By: bozil <bozil@student.42.fr>                +#+  +:+       +#+        */
-/*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2026/06/09 14:02:13 by mpoirier          #+#    #+#             */
-/*   Updated: 2026/06/10 10:58:52 by bozil            ###   ########.fr       */
-/*                                                                            */
-/* ************************************************************************** */
-
 #include "server.hpp"
 
 #include <cctype>
@@ -35,8 +23,7 @@ static std::string trimCopy(const std::string &s)
 	return s.substr(begin, end - begin);
 }
 
-/*construire la reponse HTTP*/
-void	Server::buildResponse(Client &client, const std::string &rawRequest)
+Request Server::parseRequest(const std::string &rawRequest) const
 {
 	Request req;
 	req.path = "/";
@@ -84,5 +71,56 @@ void	Server::buildResponse(Client &client, const std::string &rawRequest)
 		req.body = rawRequest.substr(headersEnd + 4);
 	}
 
-	client.outBuffer = Response::build(req, _config);
+	return req;
+}
+
+static std::string stripPort(const std::string &host)
+{
+	std::string::size_type colon = host.find(':');
+	if (colon == std::string::npos)
+		return host;
+	return host.substr(0, colon);
+}
+
+const ServerConfig *Server::selectServerConfig(int listenFd, const Request &req) const
+{
+	if (_config.servers.empty())
+		return NULL;
+
+	int listenPort = -1;
+	std::map<int, int>::const_iterator listenIt = _listenerPorts.find(listenFd);
+	if (listenIt != _listenerPorts.end())
+		listenPort = listenIt->second;
+
+	std::string host;
+	std::map<std::string, std::string>::const_iterator hostIt = req.headers.find("host");
+	if (hostIt != req.headers.end())
+		host = stripPort(hostIt->second);
+
+	const ServerConfig *portMatch = NULL;
+	for (std::vector<ServerConfig>::const_iterator it = _config.servers.begin(); it != _config.servers.end(); ++it)
+	{
+		if (!host.empty() && !it->serverName.empty() && it->serverName == host)
+			return &(*it);
+		if (listenPort != -1 && it->port == listenPort)
+			portMatch = &(*it);
+	}
+
+	if (portMatch != NULL)
+		return portMatch;
+	return &_config.servers[0];
+}
+
+// Build an HTTP response from the parsed request.
+void	Server::buildResponse(Client &client, const std::string &rawRequest)
+{
+	Request req = parseRequest(rawRequest);
+	const ServerConfig *serverConfig = selectServerConfig(client.listenFd, req);
+	if (serverConfig == NULL)
+	{
+		client.outBuffer = "HTTP/1.1 500 Internal Server Error\r\nContent-Type: text/plain\r\nContent-Length: 0\r\nConnection: close\r\n\r\n";
+		return;
+	}
+
+	client.outBuffer = Response::build(req, *serverConfig);
 }

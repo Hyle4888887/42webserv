@@ -1,17 +1,8 @@
-/* ************************************************************************** */
-/*                                                                            */
-/*                                                        :::      ::::::::   */
-/*   build.cpp                                          :+:      :+:    :+:   */
-/*                                                    +:+ +:+         +:+     */
-/*   By: bozil <bozil@student.42.fr>                +#+  +:+       +#+        */
-/*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2026/06/10 10:39:29 by bozil             #+#    #+#             */
-/*   Updated: 2026/06/11 15:18:06 by bozil            ###   ########.fr       */
-/*                                                                            */
-/* ************************************************************************** */
 
 #include "HTTP.hpp"
+#include <algorithm>
 
+// Build a directory listing page for a readable folder.
 std::string Response::buildDirectoryListing(const std::string &urlPath, const std::string &fsPath)
 {
     DIR *dir = opendir(fsPath.c_str());
@@ -33,13 +24,17 @@ std::string Response::buildDirectoryListing(const std::string &urlPath, const st
     return html;
 }
 
+// Select the target location and dispatch the HTTP method.
 std::string Response::build(const Request &req, const ServerConfig &config)
 {
-    const RouteConfig *route = matchRoute(req.path, config);
-    if (!route)
+    const LocationConfig *location = matchLocation(req.path, config);
+    if (!location)
         return errorResponse(404, config);
 
-    const std::vector<std::string> &methods = route->allowedMethods;
+    if (location->hasRedirect)
+        return makeRedirect(location->redirectCode, location->redirectURL);
+
+    const std::vector<std::string> &methods = location->allowedMethods;
     if (!methods.empty())
     {
         bool found = false;
@@ -49,9 +44,9 @@ std::string Response::build(const Request &req, const ServerConfig &config)
             return errorResponse(405, config);
     }
 
-    if (req.method == "GET")    return handleGET   (req, *route, config);
-    if (req.method == "POST")   return handlePOST  (req, *route, config);
-    if (req.method == "DELETE") return handleDELETE(req, *route, config);
+    if (req.method == "GET")    return handleGET   (req, *location, config);
+    if (req.method == "POST")   return handlePOST  (req, *location, config);
+    if (req.method == "DELETE") return handleDELETE(req, *location, config);
 
     return errorResponse(405, config);
 }

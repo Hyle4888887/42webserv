@@ -1,27 +1,12 @@
-/* ************************************************************************** */
-/*                                                                            */
-/*                                                        :::      ::::::::   */
-/*   server.cpp                                         :+:      :+:    :+:   */
-/*                                                    +:+ +:+         +:+     */
-/*   By: bozil <bozil@student.42.fr>                +#+  +:+       +#+        */
-/*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2026/06/02 12:51:56 by bozil             #+#    #+#             */
-/*   Updated: 2026/06/10 11:07:51 by bozil            ###   ########.fr       */
-/*                                                                            */
-/* ************************************************************************** */
 
 #include "server.hpp"
 
 Server::Server()
 {
-	RouteConfig rootRoute;
-	rootRoute.root = ".";
-	rootRoute.index = "index.html";
-	rootRoute.dirListing = true;
-	rootRoute.allowedMethods.push_back("GET");
-	rootRoute.allowedMethods.push_back("POST");
-	rootRoute.allowedMethods.push_back("DELETE");
-	_config.routes["/"] = rootRoute;
+}
+
+Server::Server(const Config &config) : _config(config)
+{
 }
 
 Server::~Server()
@@ -30,7 +15,7 @@ Server::~Server()
 		close(_pollFds[i].fd);
 }
 
-/*fonction principale*/
+// Run the main server loop.
 void Server::run()
 {
 	if (_pollFds.empty())
@@ -41,8 +26,7 @@ void Server::run()
  
 	while (true)
 	{
-	/*premier timout pour voir les clients inactif*/
-		int ready = poll(&_pollFds[0], static_cast<nfds_t>(_pollFds.size()), 5000); // en ms
+		int ready = poll(&_pollFds[0], static_cast<nfds_t>(_pollFds.size()), 5000);
  
 		if (ready < 0)
 		{
@@ -52,10 +36,8 @@ void Server::run()
 			break;
 		}
  
-		/*reverifier les timeouts*/
 		checkTimeouts(); checkCGITimeouts();
  
-		/* Effacer les clients inactifs sans invalidé les indices restants */
 		for (std::size_t i = _pollFds.size(); i-- > 0;)
 		{
 			short revents = _pollFds[i].revents;
@@ -64,7 +46,6 @@ void Server::run()
  
 			int fd = _pollFds[i].fd;
 			if (fd < 0 || revents == 0) { continue; }
-			// Erreur ou deconnexion
 			if (revents & (POLLERR | POLLHUP | POLLNVAL))
 			{
 				if (isCGIFd(fd)) { handleCGIRead(i); }
@@ -97,7 +78,7 @@ void Server::run()
 	}
 }
 
-/*supprime un client */
+// Close and remove a client connection.
 void	Server::closeClient(std::size_t index)
 {
 	int	fd = _pollFds[index].fd;

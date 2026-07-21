@@ -29,23 +29,23 @@ std::vector<Token> Lexer::tokenize()
 		c = this->_content[_i];
 		if (c == '{')
 		{
-			tokens.push_back({LBRACE, "{", this->_line, this->_column});
+			tokens.push_back(Token(LBRACE, "{", this->_line, this->_column));
 			advance();
 		}
 		else if (c == '}')
 		{
-			tokens.push_back({RBRACE, "}", this->_line, this->_column});
+			tokens.push_back(Token(RBRACE, "}", this->_line, this->_column));
 			advance();
 		}
 		else if (c == ';')
 		{
-			tokens.push_back({SEMICOLON, ";", this->_line, this->_column});
+			tokens.push_back(Token(SEMICOLON, ";", this->_line, this->_column));
 			advance();
 		}
 		else
 			tokens.push_back(readWord());
 	}
-	tokens.push_back({END_OF_FILE, "", this->_line, this->_column});
+	tokens.push_back(Token(END_OF_FILE, "", this->_line, this->_column));
 	return (tokens);
 }
 
@@ -65,7 +65,7 @@ Token Lexer::readWord()
 		value += c;
 		advance();
 	}
-	return {IDENTIFIER, value, line, column};
+	return Token(IDENTIFIER, value, line, column);
 }
 
 void Lexer::advance()

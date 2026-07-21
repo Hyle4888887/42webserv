@@ -21,6 +21,10 @@ struct Token
 
     size_t line;
     size_t column;
+
+    Token() : type(IDENTIFIER), value(), line(0), column(0) {}
+    Token(TokenType t, const std::string &v, size_t l, size_t c)
+        : type(t), value(v), line(l), column(c) {}
 };
 
 #endif

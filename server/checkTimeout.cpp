@@ -1,14 +1,3 @@
-/* ************************************************************************** */
-/*                                                                            */
-/*                                                        :::      ::::::::   */
-/*   checkTimeout.cpp                                   :+:      :+:    :+:   */
-/*                                                    +:+ +:+         +:+     */
-/*   By: mpoirier <mpoirier@student.42nice.fr>      +#+  +:+       +#+        */
-/*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2026/06/09 14:01:21 by mpoirier          #+#    #+#             */
-/*   Updated: 2026/06/09 14:01:56 by mpoirier         ###   ########.fr       */
-/*                                                                            */
-/* ************************************************************************** */
 
 #include "server.hpp"
 
@@ -30,7 +19,7 @@ void Server::checkCGITimeouts()
     }
 }
 
-/*ferme les clients inactifs*/
+// Close clients that have been idle for too long.
 void Server::checkTimeouts()
 {
 	time_t now = std::time(NULL);

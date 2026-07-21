@@ -6,7 +6,7 @@
 /*   By: bozil <bozil@student.42.fr>                +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/06/02 12:52:06 by bozil             #+#    #+#             */
-/*   Updated: 2026/06/10 11:06:45 by bozil            ###   ########.fr       */
+/*   Updated: 2026/07/21 12:19:26 by bozil            ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -32,6 +32,7 @@
 #include <cstring>
 
 #include "../HTTP/HTTP.hpp"
+#include "../parser/config.hpp"
 #include "../CGI/CGI.hpp"
 #include "../utils/utils.hpp"
 
@@ -46,6 +47,7 @@ class Server
 {
   public:
 	Server();
+	explicit Server(const Config &config);
 	~Server();
 	bool addListener(int port);
 	void run();
@@ -63,11 +65,12 @@ class Server
 		pid_t       CGIPid;
 		int         CGIFdIn;
 		int         CGIFdOut;
+		int         listenFd;
 		std::string CGIInput;
 		std::string CGIOutput;
 		time_t      CGIStart;
 
-		Client(): responseReady(false), lastActivityTime(std::time(NULL)), CGIActive(false), CGIPid(-1), CGIFdIn(-1), CGIFdOut(-1), CGIStart(0) {}
+		Client(): responseReady(false), lastActivityTime(std::time(NULL)), CGIActive(false), CGIPid(-1), CGIFdIn(-1), CGIFdOut(-1), listenFd(-1), CGIStart(0) {}
 	};
 
 	bool setNonBlocking(int fd);
@@ -79,6 +82,11 @@ class Server
 	void handleWrite(std::size_t index);
 	void closeClient(std::size_t index);
 	void buildResponse(Client &client, const std::string &rawRequest);
+	Request parseRequest(const std::string &rawRequest) const;
+	const ServerConfig *selectServerConfig(int listenFd, const Request &req) const;
+	const LocationConfig *matchLocation(const std::string &path, const ServerConfig &config) const;
+	std::string resolvePath(const std::string &urlPath, const LocationConfig &location) const;
+	bool findCgiTarget(const Request &req, const ServerConfig &config, std::string &interpreter, std::string &scriptPath) const;
 	void checkTimeouts();
 	void checkCGITimeouts();
 
@@ -86,7 +94,8 @@ class Server
 	std::vector<struct pollfd> _pollFds;
 	std::map<int, Client> _clients;
 	std::map<int, int> _CGIToClient;
-	ServerConfig _config;
+	std::map<int, int> _listenerPorts;
+	Config _config;
 
 	bool isCGIFd(int fd) const;
 	void startCGI(int clientFd, const std::string &interpreter, const std::string &scriptPath, const std::string &method, const std::string &query, const std::string &body);

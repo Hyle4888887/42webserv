@@ -1,18 +1,8 @@
-/* ************************************************************************** */
-/*                                                                            */
-/*                                                        :::      ::::::::   */
-/*   main.cpp                                           :+:      :+:    :+:   */
-/*                                                    +:+ +:+         +:+     */
-/*   By: mbores <mbores@student.42.fr>              +#+  +:+       +#+        */
-/*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2026/06/02 12:51:45 by bozil             #+#    #+#             */
-/*   Updated: 2026/07/20 13:59:53 by mbores           ###   ########.fr       */
-/*                                                                            */
-/* ************************************************************************** */
 
 #include "webserv.hpp"
 #include "parser/configParser.hpp"
 
+// Program entry point.
 int	main(int argc, char **argv)
 {
 	if (argc != 2)
@@ -29,12 +19,33 @@ int	main(int argc, char **argv)
 
 		signal(SIGPIPE, SIG_IGN);
 
-		Server	server;
+		Server	server(config);
+		if (config.servers.empty())
+		{
+			std::cerr << "No server blocks found." << std::endl;
+			return (1);
+		}
 
-		if (!server.addListener(8080))
-			return 1;
-		if (!server.addListener(8081))
-			return 1;
+		std::vector<int> ports;
+		for (std::size_t i = 0; i < config.servers.size(); ++i)
+		{
+			int port = config.servers[i].port;
+			bool seen = false;
+			for (std::size_t j = 0; j < ports.size(); ++j)
+			{
+				if (ports[j] == port)
+				{
+					seen = true;
+					break;
+				}
+			}
+			if (!seen)
+			{
+				if (!server.addListener(port))
+					return 1;
+				ports.push_back(port);
+			}
+		}
 
 		server.run();
 	}

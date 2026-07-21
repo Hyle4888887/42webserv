@@ -1,18 +1,7 @@
-/* ************************************************************************** */
-/*                                                                            */
-/*                                                        :::      ::::::::   */
-/*   socket.cpp                                         :+:      :+:    :+:   */
-/*                                                    +:+ +:+         +:+     */
-/*   By: mpoirier <mpoirier@student.42nice.fr>      +#+  +:+       +#+        */
-/*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2026/06/09 13:54:14 by mpoirier          #+#    #+#             */
-/*   Updated: 2026/06/09 13:57:31 by mpoirier         ###   ########.fr       */
-/*                                                                            */
-/* ************************************************************************** */
 
 #include "server.hpp"
 
-/*rend le socket non bloquant*/
+// Put a socket into non-blocking mode.
 bool	Server::setNonBlocking(int fd)
 {
 	if (fcntl(fd, F_SETFL, O_NONBLOCK) < 0)
@@ -23,7 +12,7 @@ bool	Server::setNonBlocking(int fd)
 	return true;
 }
 
-/*configure et crée un socket d'écoute*/
+// Configure and bind a listening socket.
 int	Server::ListeningSocket(int port)
 {
 	int	fd = socket(AF_INET, SOCK_STREAM, 0);
@@ -68,7 +57,7 @@ int	Server::ListeningSocket(int port)
 	return fd;
 }
 
-/*crée un socket d'écoute*/
+// Add a listening socket to the poll set.
 bool	Server::addListener(int port)
 {
 	int	fd = ListeningSocket(port);
@@ -77,17 +66,18 @@ bool	Server::addListener(int port)
 
 	struct pollfd	pfd;
 	pfd.fd      = fd;
-	pfd.events  = POLLIN;	// read
+	pfd.events  = POLLIN;
 	pfd.revents = 0;
 	_pollFds.push_back(pfd);
 	_listenFds.push_back(fd);
+	_listenerPorts[fd] = port;
 
 	std::cout << "Listening on port " << port << " (fd=" << fd << ")"
 			  << std::endl;
 	return true;
 }
 
-/*si fd est un socket d'écoute renvoie true*/
+// Check whether a file descriptor belongs to a listening socket.
 bool	Server::isListener(int fd) const
 {
 	for (std::size_t i = 0; i < _listenFds.size(); ++i)

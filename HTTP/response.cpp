@@ -1,15 +1,3 @@
-/* ************************************************************************** */
-/*                                                                            */
-/*                                                        :::      ::::::::   */
-/*   response.cpp                                       :+:      :+:    :+:   */
-/*                                                    +:+ +:+         +:+     */
-/*   By: bozil <bozil@student.42.fr>                +#+  +:+       +#+        */
-/*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2026/06/10 10:45:23 by bozil             #+#    #+#             */
-/*   Updated: 2026/06/11 15:18:41 by bozil            ###   ########.fr       */
-/*                                                                            */
-/* ************************************************************************** */
-
 #include "HTTP.hpp"
 
 std::string Response::statusText(int code)
@@ -53,10 +41,10 @@ std::string Response::makeResponse(int code, const std::string &mime, const std:
     return r;
 }
 
-std::string Response::makeRedirect(const std::string &location)
+std::string Response::makeRedirect(int code, const std::string &location)
 {
     std::string r;
-    r  = "HTTP/1.1 301 Moved Permanently\r\n";
+    r  = "HTTP/1.1 " + toString(code) + " " + statusText(code) + "\r\n";
     r += "Location: " + location + "\r\n";
     r += "Content-Length: 0\r\n";
     r += "Connection: close\r\n";

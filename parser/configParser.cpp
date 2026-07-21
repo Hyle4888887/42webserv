@@ -127,17 +127,26 @@ void ConfigParser::parseClientMaxBodySize(ServerConfig &server, const std::vecto
 
 void ConfigParser::parseErrorPage(ServerConfig &server, const std::vector<Token> &tokens, size_t &pos)
 {
+	std::ostringstream oss;
 	pos++;
 	expect(tokens, pos, IDENTIFIER);
 	if (!isNumber(tokens[pos].value))
 		error(tokens[pos], "Number expected in 'error_page'");
 	int error_code = std::atoi(tokens[pos].value.c_str());
 	if (server.errorPages.count(error_code))
-		error(tokens[pos], "Error code " + std::to_string(error_code) + " already present, no duplicate allowed");
+	{
+		oss.str("");
+		oss << "Error code " << error_code << " already present, no duplicate allowed";
+		error(tokens[pos], oss.str());
+	}
 	pos++;
 	expect(tokens, pos, IDENTIFIER);
 	if (!endsWith(tokens[pos].value, ".html"))
-		error(tokens[pos], "Error page " + std::to_string(error_code) + " must be a .html file");
+	{
+		oss.str("");
+		oss << "Error page " << error_code << " must be a .html file";
+		error(tokens[pos], oss.str());
+	}
 	if (!access(tokens[pos].value.c_str(), F_OK))
 		error(tokens[pos], "This 'error_page' file doesn't exist : " + tokens[pos].value);
 	if (!access(tokens[pos].value.c_str(), X_OK))
@@ -223,10 +232,10 @@ void ConfigParser::parseAllowedMethods(LocationConfig &location, const std::vect
 	while (tokens[pos].type != SEMICOLON)
 	{
 		expect(tokens, pos, IDENTIFIER);
-		for (auto method : location.allowedMethods)
+		for (std::vector<std::string>::const_iterator it = location.allowedMethods.begin(); it != location.allowedMethods.end(); ++it)
 		{
-			if (method == tokens[pos].value)
-				error(tokens[pos], "'" + method + "' already present, no duplicate allowed");
+			if (*it == tokens[pos].value)
+				error(tokens[pos], "'" + *it + "' already present, no duplicate allowed");
 		}
 		if (tokens[pos].value == "GET" || tokens[pos].value == "POST" || tokens[pos].value == "DELETE")
 			location.allowedMethods.push_back(tokens[pos].value);

@@ -63,7 +63,7 @@ void ConfigParser::serverInit(ServerConfig &server)
 	server.host = "0.0.0.0";
 	server.port = 80;
 	server.serverName = "";
-	server.clientMaxBodySize = 1048576;
+	server.clientMaxBodySize = 1048576; // 1Mb
 }
 
 void ConfigParser::parseListen(ServerConfig& server, const std::vector<Token> &tokens, size_t &pos)

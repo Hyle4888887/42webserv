@@ -43,7 +43,7 @@ std::string CGI::buildResponse(const std::string &cgiOut)
         
         std::string lower = toLower(name);
         if (lower == "status") { status = value; hasStatus = true;}
-        else if (lower == "content-lenght") { continue; }
+        else if (lower == "content-length") { continue; }
         else { if (lower == "location") { hasLocation = true; } forwarded += name + ": " + value + "\r\n"; }
     }
     if (hasLocation && !hasStatus) { status = "302 Found"; }

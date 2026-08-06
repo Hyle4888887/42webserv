@@ -147,10 +147,8 @@ void ConfigParser::parseErrorPage(ServerConfig &server, const std::vector<Token>
 		oss << "Error page " << error_code << " must be a .html file";
 		error(tokens[pos], oss.str());
 	}
-	if (!access(tokens[pos].value.c_str(), F_OK))
-		error(tokens[pos], "This 'error_page' file doesn't exist : " + tokens[pos].value);
-	if (!access(tokens[pos].value.c_str(), X_OK))
-		error(tokens[pos], "This 'error_page' file cannot be executed : " + tokens[pos].value);
+	if (access(tokens[pos].value.c_str(), R_OK) != 0)
+		error(tokens[pos], "This 'error_page' file doesn't exist or is not readable : " + tokens[pos].value);
 	server.errorPages[error_code] = tokens[pos].value;
 	pos++;
 	expect(tokens, pos, SEMICOLON);
@@ -214,10 +212,6 @@ void ConfigParser::parseIndex(LocationConfig &location, const std::vector<Token>
 	expect(tokens, pos, IDENTIFIER);
 	if (!endsWith(tokens[pos].value, ".html"))
 		error(tokens[pos], "'index' must be a .html file");
-	if (!access(tokens[pos].value.c_str(), F_OK))
-		error(tokens[pos], "This 'index' file doesn't exist : " + tokens[pos].value);
-	if (!access(tokens[pos].value.c_str(), X_OK))
-		error(tokens[pos], "This 'index' file cannot be executed : " + tokens[pos].value);
 	location.index = tokens[pos].value;
 	pos++;
 	expect(tokens, pos, SEMICOLON);
@@ -290,9 +284,7 @@ void ConfigParser::parseCgi(LocationConfig &location, const std::vector<Token> &
 	std::string cgi_extension = tokens[pos].value;
 	pos++;
 	expect(tokens, pos, IDENTIFIER);
-	if (!access(tokens[pos].value.c_str(), F_OK))
-		error(tokens[pos], "This 'cgi' interpreter doesn't exist : " + tokens[pos].value);
-	if (!access(tokens[pos].value.c_str(), X_OK))
+	if (access(tokens[pos].value.c_str(), X_OK) != 0)
 		error(tokens[pos], "This 'cgi' interpreter cannot be executed : " + tokens[pos].value);
 	location.cgi[cgi_extension] = tokens[pos].value;
 	pos++;

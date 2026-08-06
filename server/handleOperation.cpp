@@ -112,7 +112,7 @@ void	Server::handleWrite(std::size_t index)
 	Client	&client = _clients[fd];
 
 	ssize_t	n = send(fd, client.outBuffer.c_str(), client.outBuffer.size(), 0);
-	if (n < 0)
+	if (n <= 0)
 	{
 		std::cerr << "send error fd=" << fd << std::endl;
 		closeClient(index);
@@ -136,7 +136,7 @@ void	Server::handleRead(std::size_t index)
 
 	ssize_t	n = recv(fd, buffer, sizeof(buffer), 0);
 	
-	if (n == 0)
+	if (n <= 0)
 	{
 		std::cout << "[-] Client deconnecte fd=" << fd << std::endl;
 		closeClient(index);
@@ -163,16 +163,9 @@ void	Server::handleRead(std::size_t index)
 
 	if (CGI)
 	{
-		if (access(scriptPath.c_str(), F_OK) != 0)
+		if (access(scriptPath.c_str(), R_OK) != 0)
 		{
 			client.outBuffer = "HTTP/1.1 404 Not Found\r\nContent-Type: text/html\r\nContent-Length: 0\r\nConnection: close\r\n\r\n";
-			client.responseReady = true;
-			_pollFds[index].events = POLLOUT;
-			_pollFds[index].events |= POLLRDHUP;
-		}
-		else if (access(scriptPath.c_str(), R_OK) != 0)
-		{
-			client.outBuffer = "HTTP/1.1 403 Forbidden\r\nContent-Type: text/html\r\nContent-Length: 0\r\nConnection: close\r\n\r\n";
 			client.responseReady = true;
 			_pollFds[index].events = POLLOUT;
 			_pollFds[index].events |= POLLRDHUP;

@@ -13,7 +13,7 @@ void Server::checkCGITimeouts()
         if (c.CGIFdOut != -1) { _CGIToClient.erase(c.CGIFdOut); disablePollFdByFd(c.CGIFdOut); close(c.CGIFdOut); c.CGIFdOut = -1; }
         if (c.CGIFdIn  != -1) { _CGIToClient.erase(c.CGIFdIn);  disablePollFdByFd(c.CGIFdIn);  close(c.CGIFdIn);  c.CGIFdIn  = -1; }
         c.CGIActive = false;
-        c.outBuffer = "HTTP/1.1 504 Gateway TimeOut\r\n Content-Type: text/html\r\nContent-Length: 0\r\nConnection: close\r\n\r\n";
+		c.outBuffer = "HTTP/1.1 504 Gateway Timeout\r\nContent-Type: text/html\r\nContent-Length: 0\r\nConnection: close\r\n\r\n";
         c.responseReady = true;
         setClientPollout(it->first);
     }

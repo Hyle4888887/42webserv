@@ -73,8 +73,8 @@ void Server::run()
 
 			else if (revents & POLLOUT)
 				handleWrite(i);
-			compactPollFds();
 		}
+		compactPollFds();
 	}
 }
 

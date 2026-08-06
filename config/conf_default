@@ -4,8 +4,8 @@ server {
 
 	client_max_body_size 1000000;
 
-	error_page 404 /errors/404.html;
-	error_page 500 /errors/500.html;
+	error_page 404 ./errors/404.html;
+	error_page 500 ./errors/500.html;
 
 	location / {
 		root ./www;
@@ -16,14 +16,12 @@ server {
 		autoindex off;
 
 		upload_dir on ./uploads;
-
-		cgi .php /usr/bin/php-cgi;
 	}
 
 	location /uploads {
-		root ./www;
+		root ./uploads;
 
-		allowed_methods GET POST;
+		allowed_methods GET POST DELETE;
 
 		upload_dir on ./uploads;
 		autoindex on;
@@ -34,7 +32,7 @@ server {
 	}
 
 	location /cgi-bin {
-		root ./cgi;
+		root ./cgi-bin;
 
 		allowed_methods GET POST;
 

@@ -8,7 +8,7 @@ void Server::startCGI(int clientFd, const std::string &interpreter, const std::s
     CGI *cgi = new CGI();
     if (!cgi->start(interpreter, scriptPath, method, query, body)) {
         delete cgi;
-        client.outBuffer = "HTTP/1.1 500 DONT KNOW WHAT IT IS 2.0\r\n Content-Type: text/html\r\nContent-Length: 0\r\nConnection: close\r\n\r\n";
+        client.outBuffer = "HTTP/1.1 500 Internal Server Error\r\nContent-Type: text/html\r\nContent-Length: 0\r\nConnection: close\r\n\r\n";
         client.responseReady = true;
         setClientPollout(clientFd);
         return; }

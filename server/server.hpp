@@ -18,6 +18,7 @@
 #include <sys/socket.h>
 #include <sys/wait.h>
 #include <netinet/in.h>
+#include <netdb.h>
 
 #include <string>
 #include <sstream>
@@ -49,7 +50,7 @@ class Server
 	Server();
 	explicit Server(const Config &config);
 	~Server();
-	bool addListener(int port);
+	bool addListener(const std::string &host, int port);
 	void run();
 
   private:
@@ -74,7 +75,7 @@ class Server
 	};
 
 	bool setNonBlocking(int fd);
-	int ListeningSocket(int port);
+	int ListeningSocket(const std::string &host, int port);
 	bool isListener(int fd) const;
 
 	void handleNewConnection(int listenFd);
@@ -94,6 +95,7 @@ class Server
 	std::vector<struct pollfd> _pollFds;
 	std::map<int, Client> _clients;
 	std::map<int, int> _CGIToClient;
+	std::map<int, std::string> _listenerHosts;
 	std::map<int, int> _listenerPorts;
 	Config _config;
 

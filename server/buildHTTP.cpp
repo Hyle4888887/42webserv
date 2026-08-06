@@ -88,9 +88,13 @@ const ServerConfig *Server::selectServerConfig(int listenFd, const Request &req)
 		return NULL;
 
 	int listenPort = -1;
+	std::string listenHost;
 	std::map<int, int>::const_iterator listenIt = _listenerPorts.find(listenFd);
 	if (listenIt != _listenerPorts.end())
 		listenPort = listenIt->second;
+	std::map<int, std::string>::const_iterator listenerHostIt = _listenerHosts.find(listenFd);
+	if (listenerHostIt != _listenerHosts.end())
+		listenHost = listenerHostIt->second;
 
 	std::string host;
 	std::map<std::string, std::string>::const_iterator hostIt = req.headers.find("host");
@@ -100,9 +104,11 @@ const ServerConfig *Server::selectServerConfig(int listenFd, const Request &req)
 	const ServerConfig *portMatch = NULL;
 	for (std::vector<ServerConfig>::const_iterator it = _config.servers.begin(); it != _config.servers.end(); ++it)
 	{
+		if (listenPort != -1 && it->port != listenPort)
+			continue;
 		if (!host.empty() && !it->serverName.empty() && it->serverName == host)
 			return &(*it);
-		if (listenPort != -1 && it->port == listenPort)
+		if (portMatch == NULL && (listenHost.empty() || listenHost == "0.0.0.0" || it->host == listenHost))
 			portMatch = &(*it);
 	}
 

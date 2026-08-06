@@ -5,14 +5,15 @@
 // Program entry point.
 int	main(int argc, char **argv)
 {
-	if (argc != 2)
+	if (argc > 2)
 	{
-		std::cerr << "Usage: " << argv[0] << " <config_file>" << std::endl;
+		std::cerr << "Usage: " << argv[0] << " [config_file]" << std::endl;
 		return (1);
 	}
 	try
 	{
-		ConfigParser parser(argv[1]);
+		std::string configPath = (argc == 2) ? argv[1] : "config/conf_default";
+		ConfigParser parser(configPath);
 		std::cout << "Configuration parsed successfully!" << std::endl;
 
 		const Config& config = parser.getConfig();
@@ -26,14 +27,15 @@ int	main(int argc, char **argv)
 			return (1);
 		}
 
-		std::vector<int> ports;
+		std::vector<std::string> listeners;
 		for (std::size_t i = 0; i < config.servers.size(); ++i)
 		{
 			int port = config.servers[i].port;
+			std::string listenerKey = config.servers[i].host + ":" + toString(static_cast<unsigned long>(port));
 			bool seen = false;
-			for (std::size_t j = 0; j < ports.size(); ++j)
+			for (std::size_t j = 0; j < listeners.size(); ++j)
 			{
-				if (ports[j] == port)
+				if (listeners[j] == listenerKey)
 				{
 					seen = true;
 					break;
@@ -41,9 +43,14 @@ int	main(int argc, char **argv)
 			}
 			if (!seen)
 			{
-				if (!server.addListener(port))
+				if (!server.addListener(config.servers[i].host, port))
 					return 1;
-				ports.push_back(port);
+				listeners.push_back(listenerKey);
+			}
+			else
+			{
+				std::cerr << "Duplicate listen directive: " << listenerKey << std::endl;
+				return 1;
 			}
 		}
 

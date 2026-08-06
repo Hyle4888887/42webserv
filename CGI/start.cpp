@@ -20,12 +20,13 @@ static void executeChild(const std::string &interpreter, const std::string &scri
     env.push_back("SERVER_PROTOCOL=HTTP/1.1");
     env.push_back("REQUEST_METHOD=" + method);
     env.push_back("QUERY_STRING=" + query);
-    env.push_back("SCRIPT_FILENAME=" + file);
+    env.push_back("SCRIPT_FILENAME=" + scriptPath);
+    env.push_back("SCRIPT_NAME=" + file);
     env.push_back("REDIRECT_STATUS=200");
     if (method == "POST")
     {
         env.push_back("CONTENT_LENGTH=" + toString(body.size()));
-        env.push_back("CONTENT_TYPE=application/x-ww-form-urlencoded");
+        env.push_back("CONTENT_TYPE=application/x-www-form-urlencoded");
     }
     
     std::vector<char*> envp;

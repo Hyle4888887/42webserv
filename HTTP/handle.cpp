@@ -32,7 +32,17 @@ std::string Response::handlePOST(const Request &req, const LocationConfig &locat
     dest += name;
     int fd = open(dest.c_str(), O_CREAT | O_WRONLY | O_TRUNC, 0644);
     if (fd < 0) { return errorResponse(500, config); }
-    if (!req.body.empty()) { write(fd, req.body.data(), req.body.size()); }
+    size_t written = 0;
+    while (written < req.body.size())
+    {
+        ssize_t chunk = write(fd, req.body.data() + written, req.body.size() - written);
+        if (chunk <= 0)
+        {
+            close(fd);
+            return errorResponse(500, config);
+        }
+        written += static_cast<size_t>(chunk);
+    }
     close(fd);
     return makeResponse(201, "text/plain", "Created");
 }
@@ -42,8 +52,22 @@ std::string Response::handleDELETE(const Request &req, const LocationConfig &loc
 {
     std::string path = resolvePath(req.path, location);
     struct stat st;
-    if (stat(path.c_str(), &st) != 0) { return errorResponse(404, config); }
+    if (stat(path.c_str(), &st) != 0)
+    {
+        if (location.uploadEnabled && !location.uploadDir.empty())
+        {
+            std::string uploadPath = location.uploadDir;
+            if (lastC(uploadPath) != '/') { uploadPath += "/"; }
+            uploadPath += req.path.substr(req.path.find_last_of('/') + 1);
+            if (stat(uploadPath.c_str(), &st) == 0)
+                path = uploadPath;
+            else
+                return errorResponse(404, config);
+        }
+        else
+            return errorResponse(404, config);
+    }
     if (S_ISDIR(st.st_mode)) { return errorResponse(403, config); }
     if (std::remove(path.c_str()) != 0) { return errorResponse(403, config); }
-    return makeResponse(204, "text/plain", "No Content");
+    return makeResponse(204, "text/plain", "");
 }

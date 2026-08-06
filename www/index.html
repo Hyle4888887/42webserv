@@ -11,6 +11,12 @@
 <body>
   <h1>webserv</h1>
   <p>This page is served by the static file handler.</p>
+  <form action="/uploads/" method="post" enctype="multipart/form-data" style="margin: 24px 0; padding: 16px; border: 1px solid #ccc; max-width: 420px;">
+    <label for="file">Upload a file, image, or video</label><br>
+    <input id="file" name="file" type="file" style="margin: 12px 0;">
+    <br>
+    <button type="submit">Upload</button>
+  </form>
   <p>
     <a href="/cgi-bin/hello.py">CGI GET</a>
     <a href="/redirect">Redirect</a>

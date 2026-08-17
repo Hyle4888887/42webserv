@@ -6,6 +6,7 @@ Webserv is a C++98 HTTP server for the 42 curriculum. It parses an NGINX-inspire
 
 The server also supports route-specific configuration, file uploads, redirects, default error pages, directory listing, and CGI execution by file extension.
 
+
 # Instructions
 
 Build the project with:
@@ -25,6 +26,9 @@ You can also use the alternate test configuration:
 ```bash
 ./webserv config/test.conf
 ```
+
+on your web browser, write: http://localhost:portnumber/
+
 
 Makefile targets:
 

@@ -6,11 +6,8 @@ Webserv is a C++98 HTTP server for the 42 curriculum. It parses an NGINX-inspire
 
 The server also supports route-specific configuration, file uploads, redirects, default error pages, directory listing, and CGI execution by file extension.
 
-# Project structure
+**Project structure:**
 
-- `server/` — Core server logic: sockets, `poll()` loop, main event loop (`server.cpp`), timeout handling, HTTP response building, and CGI dispatch (`handleCGI.cpp`, `handleOperation.cpp`).
-- `HTTP/` — The `HTTP` class: request parsing and response construction/formatting (`build.cpp`, `handle.cpp`, `response.cpp`).
-- `CGI/` — CGI script execution: process launching (`start.cpp`) and CGI response building (`buildResponse.cpp`).
 - `parser/` — Config file parser: lexer and parser (`lexer.cpp`, `configParser.cpp`) plus the `serverConfig`/`locationConfig` structures.
 - `config/` — Server configuration files (`test.conf`, `conf_default`, `conf_template`).
 - `cgi-bin/` — Sample Python CGI scripts for testing (`echo.py`, `hello.py`, `redirect.py`, `notfound.py`, `lecture.py`).
@@ -39,7 +36,7 @@ You can also use the alternate test configuration:
 ./webserv config/test.conf
 ```
 
-on your web browser, write: http://localhost:portnumber/
+To open the web page on your web browser, use: http://localhost:portnumber/
 
 Makefile targets:
 

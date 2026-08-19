@@ -123,7 +123,6 @@ body::before{
   border-bottom:1px solid var(--border);
 }
 
-/* ---------- transcript log ---------- */
 .log{
   max-height:220px;
   overflow-y:auto;
@@ -195,7 +194,6 @@ body::before{
 #uploadHint.err{color:var(--red);}
 #uploadHint.ok{color:var(--green);}
 
-/* ---------- listing ---------- */
 .ghost-btn{
   background:none;
   border:1px solid var(--fg-dimmer);
@@ -328,7 +326,6 @@ body::before{
 
   var reqCount = 0;
 
-  /* ---------- clock ---------- */
   function pad(n){ return n < 10 ? "0" + n : "" + n; }
   function updateClock(){
     var d = new Date();
@@ -337,7 +334,6 @@ body::before{
   updateClock();
   setInterval(updateClock, 1000);
 
-  /* ---------- boot banner ---------- */
   var bannerLines = [
     "Trying 127.0.0.1...",
     "Connected to webserv.",
@@ -367,14 +363,12 @@ body::before{
   }
   if (reduceMotion) renderBannerInstant(); else typeBanner();
 
-  /* ---------- HTTP status text fallback ---------- */
   var STATUS_TEXT = {
     200:"OK",201:"Created",204:"No Content",301:"Moved Permanently",
     302:"Found",400:"Bad Request",403:"Forbidden",404:"Not Found",
     405:"Method Not Allowed",413:"Payload Too Large",500:"Internal Server Error"
   };
 
-  /* ---------- transcript ---------- */
   function appendLog(method, path){
     reqCount++;
     reqCountEl.textContent = reqCount + (reqCount === 1 ? " requête" : " requêtes");
@@ -434,14 +428,6 @@ body::before{
       });
   }
 
-  /* ---------- listing ----------
-     Format réel observé (curl -v GET /uploads/):
-       <a href="/uploads/.gitkeep">.gitkeep</a>
-       <a href="/uploads/upload">upload</a>
-       <a href="/uploads/..">..</a>
-     Les hrefs sont des CHEMINS ABSOLUS incluant déjà /uploads/, et le
-     parent est "/uploads/.." (pas "../"). On extrait donc le nom de
-     fichier depuis la fin du href plutôt que d'utiliser BASE + href. */
   function parseListing(html){
     var doc = new DOMParser().parseFromString(html, "text/html");
     var anchors = Array.prototype.slice.call(doc.querySelectorAll("a[href]"));
@@ -521,7 +507,6 @@ body::before{
       .catch(function(){ renderListingError(); });
   }
 
-  /* ---------- delete ---------- */
   function handleDelete(name, btnEl){
     if (!window.confirm("DELETE " + name + " ?\nCette action est irréversible.")) return;
     btnEl.disabled = true;
@@ -540,7 +525,6 @@ body::before{
       });
   }
 
-  /* ---------- upload ---------- */
   function setHint(msg, kind){
     uploadHintEl.textContent = msg || "";
     uploadHintEl.classList.remove("ok", "err");
@@ -588,7 +572,6 @@ body::before{
     if (dt && dt.files && dt.files[0]) uploadFile(dt.files[0]);
   });
 
-  /* ---------- misc ---------- */
   refreshBtn.addEventListener("click", refreshListing);
 
   refreshListing();

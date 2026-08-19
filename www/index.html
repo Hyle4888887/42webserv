@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>webserv — /uploads/</title>
+<title>webserv</title>
 <style>
 
 :root{
@@ -161,7 +161,6 @@ body::before{
 .pill-post{color:#0a1710;background:var(--green);}
 .pill-delete{color:#1a0a0a;background:var(--red);}
 
-/* ---------- upload panel ---------- */
 .upload-panel .panel-head{border-bottom:1px solid var(--border);}
 .dropzone{
   margin:16px;
@@ -288,7 +287,7 @@ body::before{
   </section>
 
   <section class="panel upload-panel">
-    <header class="panel-head"><span>POST /uploads/</span></header>
+    <header class="panel-head"><span>POST</span></header>
     <div class="dropzone" id="dropzone">
       <p>Dépose un fichier ici, ou</p>
       <label class="filebtn">
@@ -301,7 +300,7 @@ body::before{
 
   <section class="panel listing-panel">
     <header class="panel-head">
-      <span>GET /uploads/</span>
+      <span>GET</span>
       <button class="ghost-btn" id="refreshBtn" type="button">refresh</button>
     </header>
     <div class="listing" id="listing"></div>

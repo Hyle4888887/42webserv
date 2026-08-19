@@ -1,5 +1,33 @@
-
 #include "server.hpp"
+
+static bool getContentLength(const std::string &headersBlock, std::size_t &length)
+{
+	std::string lower = headersBlock;
+	for (std::size_t i = 0; i < lower.size(); ++i)
+		lower[i] = static_cast<char>(std::tolower(static_cast<unsigned char>(lower[i])));
+
+	std::string::size_type pos = lower.find("content-length:");
+	if (pos == std::string::npos)
+		return false;
+	pos += 16; // length of "content-length:"
+
+	std::string::size_type lineEnd = headersBlock.find("\r\n", pos);
+	if (lineEnd == std::string::npos)
+		lineEnd = headersBlock.size();
+
+	std::string value = headersBlock.substr(pos, lineEnd - pos);
+	std::string::size_type b = 0, e = value.size();
+	while (b < e && std::isspace(static_cast<unsigned char>(value[b])))
+		++b;
+	while (e > b && std::isspace(static_cast<unsigned char>(value[e - 1])))
+		--e;
+	value = value.substr(b, e - b);
+	if (value.empty())
+		return false;
+
+	length = static_cast<std::size_t>(std::atol(value.c_str()));
+	return true;
+}
 
 static std::string joinPath(const std::string &base, const std::string &suffix)
 {
@@ -128,34 +156,42 @@ void	Server::handleWrite(std::size_t index)
 		closeClient(index);
 	}
 }
-// Read and parse incoming client data.
+// Read incoming client data and process it once a full request has arrived.
 void	Server::handleRead(std::size_t index)
 {
 	int		fd = _pollFds[index].fd;
 	char	buffer[4096];
 
 	ssize_t	n = recv(fd, buffer, sizeof(buffer), 0);
-	
+
 	if (n <= 0)
 	{
 		std::cout << "[-] Client deconnecte fd=" << fd << std::endl;
 		closeClient(index);
 		return;
 	}
-	
-	if (n < 0)
-	{
-		std::cerr << "recv error fd=" << fd << std::endl;
-		closeClient(index);
-		return;
-	}
-
-	std::string rawRequest(buffer, n);
-	Request req = parseRequest(rawRequest);
 
 	Client &client = _clients[fd];
 	client.inBuffer.append(buffer, static_cast<std::size_t>(n));
 	client.lastActivityTime = std::time(NULL);
+
+	std::string::size_type headersEnd = client.inBuffer.find("\r\n\r\n");
+	if (headersEnd == std::string::npos)
+		return;
+
+	std::string headersBlock = client.inBuffer.substr(0, headersEnd);
+	std::size_t contentLength = 0;
+	getContentLength(headersBlock, contentLength);
+
+	std::size_t totalNeeded = headersEnd + 4 + contentLength;
+	if (client.inBuffer.size() < totalNeeded)
+		return;
+
+	std::string rawRequest = client.inBuffer.substr(0, totalNeeded);
+	client.inBuffer.erase(0, totalNeeded);
+
+	Request req = parseRequest(rawRequest);
+
 	std::string interpreter;
 	std::string scriptPath;
 	const ServerConfig *serverConfig = selectServerConfig(client.listenFd, req);

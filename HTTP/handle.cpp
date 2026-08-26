@@ -48,11 +48,12 @@ static std::string getHeaderValue(const Request &req, const std::string &name)
 
 static bool extractMultipartUpload(const Request &req, std::string &filename, std::string &content)
 {
-    std::string contentType = toLowerCopy(getHeaderValue(req, "content-type"));
-    if (contentType.find("multipart/form-data") == std::string::npos)
+    std::string contentType = getHeaderValue(req, "content-type");
+    std::string lowerContentType = toLowerCopy(contentType);
+    if (lowerContentType.find("multipart/form-data") == std::string::npos)
         return false;
 
-    std::string::size_type boundaryPos = contentType.find("boundary=");
+    std::string::size_type boundaryPos = lowerContentType.find("boundary=");
     if (boundaryPos == std::string::npos)
         return false;
 
@@ -171,7 +172,8 @@ std::string Response::handlePOST(const Request &req, const LocationConfig &locat
     if (lastC(dest) != '/') { dest += "/"; }
     dest += name;
     int fd = open(dest.c_str(), O_CREAT | O_WRONLY | O_TRUNC, 0644);
-    if (fd < 0) { return errorResponse(500, config); }
+    if (fd < 0)
+        return errorResponse(500, config);
     size_t written = 0;
     while (written < payload.size())
     {

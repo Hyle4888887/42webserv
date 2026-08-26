@@ -267,6 +267,8 @@ void ConfigParser::parseUploadDir(LocationConfig &location, const std::vector<To
 		error(tokens[pos], "Only accepted first parameter for 'upload_dir' are 'on' or 'off'");
 	pos++;
 	expect(tokens, pos, IDENTIFIER);
+	if (!isDirectory(tokens[pos].value))
+		error(tokens[pos], "Upload directory does not exist or is not a directory");
 	location.uploadDir = tokens[pos].value;
 	pos++;
 	expect(tokens, pos, SEMICOLON);
@@ -362,6 +364,17 @@ bool ConfigParser::isValidPort(const std::string& s)
 	if (n < 1 || n > 65535)
 		return false;
 	return true;
+}
+
+bool ConfigParser::isDirectory(const std::string &path)
+{
+	DIR *dir = opendir(path.c_str());
+
+    if (dir == NULL)
+        return false;
+
+    closedir(dir);
+    return true;
 }
 
 ConfigParser::ConfigParser(const std::string &configFile)

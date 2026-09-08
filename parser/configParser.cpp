@@ -210,8 +210,8 @@ void ConfigParser::parseIndex(LocationConfig &location, const std::vector<Token>
 {
 	pos++;
 	expect(tokens, pos, IDENTIFIER);
-	if (!endsWith(tokens[pos].value, ".html"))
-		error(tokens[pos], "'index' must be a .html file");
+	// if (!endsWith(tokens[pos].value, ".html"))
+	// 	error(tokens[pos], "'index' must be a .html file");
 	location.index = tokens[pos].value;
 	pos++;
 	expect(tokens, pos, SEMICOLON);

@@ -6,7 +6,7 @@
 /*   By: bozil <bozil@student.42.fr>                +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/06/02 12:52:06 by bozil             #+#    #+#             */
-/*   Updated: 2026/07/21 12:19:26 by bozil            ###   ########.fr       */
+/*   Updated: 2026/09/08 15:52:27 by bozil            ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -41,8 +41,8 @@
 # define POLLRDHUP 0
 #endif
 
-#define CLIENT_TIMEOUT 20
-#define CGI_TIMEOUT 3
+#define CLIENT_TIMEOUT 180
+#define CGI_TIMEOUT 300
 
 class Server
 {
@@ -70,8 +70,16 @@ class Server
 		std::string CGIInput;
 		std::string CGIOutput;
 		time_t      CGIStart;
+		bool        requestInitialized;
+		bool        requestChunked;
+		bool        requestComplete;
+		bool        requestNeedChunkCRLF;
+		std::size_t requestBodyCursor;
+		std::size_t requestChunkRemaining;
+		std::size_t requestHeaderEnd;
+		std::string requestBody;
 
-		Client(): responseReady(false), lastActivityTime(std::time(NULL)), CGIActive(false), CGIPid(-1), CGIFdIn(-1), CGIFdOut(-1), listenFd(-1), CGIStart(0) {}
+		Client(): responseReady(false), lastActivityTime(std::time(NULL)), CGIActive(false), CGIPid(-1), CGIFdIn(-1), CGIFdOut(-1), listenFd(-1), CGIStart(0), requestInitialized(false), requestChunked(false), requestComplete(false), requestNeedChunkCRLF(false), requestBodyCursor(0), requestChunkRemaining(0), requestHeaderEnd(0) {}
 	};
 
 	bool setNonBlocking(int fd);

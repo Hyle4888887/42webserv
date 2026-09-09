@@ -188,6 +188,8 @@ void ConfigParser::locationInit(LocationConfig &location)
 {
 	location.root = "./";
 	location.index = "index.html";
+	location.hasClientMaxBodySize = false;
+	location.clientMaxBodySize = 0;
 	location.allowedMethods.push_back("GET");
 	location.autoIndex = false;
 	location.uploadEnabled = false;
@@ -213,6 +215,18 @@ void ConfigParser::parseIndex(LocationConfig &location, const std::vector<Token>
 	// if (!endsWith(tokens[pos].value, ".html"))
 	// 	error(tokens[pos], "'index' must be a .html file");
 	location.index = tokens[pos].value;
+	pos++;
+	expect(tokens, pos, SEMICOLON);
+	pos++;
+}
+
+void ConfigParser::parseClientMaxBodySize(LocationConfig &location, const std::vector<Token> &tokens, size_t &pos)
+{
+	pos++;
+	if (!isNumber(tokens[pos].value) || tokens[pos].value[0] == '-')
+		error(tokens[pos], "'client_max_body_size' must be a positive number");
+	location.hasClientMaxBodySize = true;
+	location.clientMaxBodySize = std::atoi(tokens[pos].value.c_str());
 	pos++;
 	expect(tokens, pos, SEMICOLON);
 	pos++;
@@ -386,6 +400,7 @@ ConfigParser::ConfigParser(const std::string &configFile)
 
 	_locationParsers["root"] = &ConfigParser::parseRoot;
 	_locationParsers["index"] = &ConfigParser::parseIndex;
+	_locationParsers["client_max_body_size"] = &ConfigParser::parseClientMaxBodySize;
 	_locationParsers["allowed_methods"] = &ConfigParser::parseAllowedMethods;
 	_locationParsers["autoindex"] = &ConfigParser::parseAutoIndex;
 	_locationParsers["upload_dir"] = &ConfigParser::parseUploadDir;

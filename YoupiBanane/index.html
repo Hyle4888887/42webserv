@@ -6,21 +6,107 @@
   <style>
     body { font-family: Arial, sans-serif; margin: 40px; line-height: 1.5; }
     a { display: inline-block; margin-right: 16px; }
+    .box { margin: 24px 0; padding: 16px; border: 1px solid #ccc; max-width: 420px; }
+    select, button { padding: 6px 10px; }
   </style>
 </head>
 <body>
   <h1>webserv</h1>
   <p>This page is served by the static file handler.</p>
-  <form action="/uploads/" method="post" enctype="multipart/form-data" style="margin: 24px 0; padding: 16px; border: 1px solid #ccc; max-width: 420px;">
+
+  <form id="uploadForm" action="/uploads/" method="post" enctype="multipart/form-data" class="box">
     <label for="file">Upload a file, image, or video</label><br>
     <input id="file" name="file" type="file" style="margin: 12px 0;">
     <br>
     <button type="submit">Upload</button>
+    <small id="uploadStatus"></small>
   </form>
+
+  <div class="box">
+    <label for="downloadSelect">Download an uploaded file</label><br>
+    <div style="margin: 12px 0;">
+      <select id="downloadSelect"></select>
+      <button id="downloadBtn" type="button">Download</button>
+    </div>
+    <small id="downloadStatus"></small>
+  </div>
+
   <p>
     <a href="/cgi-bin/hello.py">CGI GET</a>
     <a href="/redirect">Redirect</a>
     <a href="/uploads/">Uploads folder</a>
   </p>
+
+  <script>
+    async function loadUploadedFiles() {
+      const select = document.getElementById('downloadSelect');
+      const status = document.getElementById('downloadStatus');
+      select.innerHTML = '';
+
+      try {
+        const res = await fetch('/uploads/');
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        const html = await res.text();
+
+        const doc = new DOMParser().parseFromString(html, 'text/html');
+        const links = Array.from(doc.querySelectorAll('a[href]')).filter(link => {
+          const url = new URL(link.getAttribute('href'), window.location.origin);
+          return url.pathname.startsWith('/uploads/') && url.pathname !== '/uploads/';
+        });
+
+        if (links.length === 0) {
+          const opt = document.createElement('option');
+          opt.textContent = 'No uploaded files yet';
+          opt.disabled = true;
+          select.appendChild(opt);
+          status.textContent = '';
+          return;
+        }
+
+        links.forEach(link => {
+          const opt = document.createElement('option');
+          opt.value = new URL(link.getAttribute('href'), window.location.origin).href;
+          opt.textContent = decodeURIComponent(link.textContent.trim());
+          select.appendChild(opt);
+        });
+        status.textContent = links.length + ' file(s) available.';
+      } catch (err) {
+        status.textContent = 'Could not load uploaded files.';
+      }
+    }
+
+    document.getElementById('uploadForm').addEventListener('submit', async event => {
+      event.preventDefault();
+      const form = event.currentTarget;
+      const fileInput = document.getElementById('file');
+      const status = document.getElementById('uploadStatus');
+      if (!fileInput.files.length) {
+        status.textContent = 'Select a file first.';
+        return;
+      }
+
+      status.textContent = 'Uploading...';
+      try {
+        const res = await fetch(form.action, {
+          method: 'POST',
+          body: new FormData(form)
+        });
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        form.reset();
+        status.textContent = 'Upload complete.';
+        await loadUploadedFiles();
+      } catch (err) {
+        status.textContent = 'Upload failed.';
+      }
+    });
+
+    document.getElementById('downloadBtn').addEventListener('click', () => {
+      const select = document.getElementById('downloadSelect');
+      const href = select.value;
+      if (!href) return;
+      window.location.href = href;
+    });
+    window.addEventListener('DOMContentLoaded', loadUploadedFiles);
+  </script>
 </body>
 </html>

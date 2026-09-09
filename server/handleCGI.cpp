@@ -51,9 +51,12 @@ void Server::handleCGIWrite(std::size_t index)
     std::map<int,int>::iterator m = _CGIToClient.find(CGIFd);
     if (m == _CGIToClient.end()) { _pollFds[index].fd = -1; return; }
     Client &client = _clients[m->second];
-    if (!client.CGIInput.empty()) {
+    while (!client.CGIInput.empty()) {
         ssize_t n = write(CGIFd, client.CGIInput.c_str(), client.CGIInput.size());
-        if (n > 0) { client.CGIInput.erase(0, n); } }
+        if (n <= 0)
+            break;
+        client.CGIInput.erase(0, static_cast<std::size_t>(n));
+    }
     if (client.CGIInput.empty()) {
         _CGIToClient.erase(CGIFd); close(CGIFd);
         client.CGIFdIn = -1; _pollFds[index].fd = -1; }

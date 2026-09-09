@@ -143,7 +143,7 @@ std::string Response::handleGET(const Request &req, const LocationConfig &locati
         struct stat ist;
         if (!location.index.empty() && stat(indexPath.c_str(), &ist) == 0 && S_ISREG(ist.st_mode)) { path = indexPath; }
         else if (location.autoIndex) { return makeResponse(200, "text/html", buildDirectoryListing(req.path, path)); }
-        else { return errorResponse(403, config); }   
+        else { return errorResponse(404, config); }
     }
     bool ok = false; std::string body = readFile(path, ok);
     if (!ok) { return errorResponse(403, config); }
@@ -153,7 +153,8 @@ std::string Response::handleGET(const Request &req, const LocationConfig &locati
 // Handle a POST request and store the uploaded body.
 std::string Response::handlePOST(const Request &req, const LocationConfig &location, const ServerConfig &config)
 {
-    if (req.body.size() > config.clientMaxBodySize) { return errorResponse(413, config); }
+    std::size_t maxBodySize = location.hasClientMaxBodySize ? location.clientMaxBodySize : config.clientMaxBodySize;
+    if (req.body.size() > maxBodySize) { return errorResponse(413, config); }
     if (!location.uploadEnabled || location.uploadDir.empty()) { return errorResponse(403, config); }
     std::string name = req.path.substr(req.path.find_last_of('/') + 1);
     if (name.empty()) { name = "upload"; }

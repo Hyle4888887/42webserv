@@ -26,6 +26,7 @@ $(OBJ_DIR)/%.o: %.cpp
 	$(CPP) -c $(FLAGS) -o $@ $<
 
 clean:
+	pkill -x $(NAME) 2>/dev/null || true
 	rm -rf $(OBJ_DIR)
 
 fclean: clean

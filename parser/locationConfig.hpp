@@ -10,6 +10,8 @@ struct LocationConfig
 	std::string path;
 	std::string root;
 	std::string index;
+	bool hasClientMaxBodySize;
+	size_t clientMaxBodySize;
 	bool autoIndex;
 	std::vector<std::string> allowedMethods;
 	bool uploadEnabled;

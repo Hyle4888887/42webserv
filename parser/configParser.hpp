@@ -50,6 +50,7 @@ private:
 	void locationInit(LocationConfig& location);
 	void parseRoot(LocationConfig& location, const std::vector<Token>& tokens, size_t& pos);
 	void parseIndex(LocationConfig& location, const std::vector<Token>& tokens, size_t& pos);
+	void parseClientMaxBodySize(LocationConfig& location, const std::vector<Token>& tokens, size_t& pos);
 	void parseAllowedMethods(LocationConfig& location, const std::vector<Token>& tokens, size_t& pos);
 	void parseAutoIndex(LocationConfig& location, const std::vector<Token>& tokens, size_t& pos);
 	void parseUploadDir(LocationConfig& location, const std::vector<Token>& tokens, size_t& pos);

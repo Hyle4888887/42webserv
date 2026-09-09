@@ -34,6 +34,8 @@ void Server::checkTimeouts()
 		std::map<int, Client>::iterator it = _clients.find(fd);
 		if (it == _clients.end())
 			continue;
+		if (it->second.CGIActive)
+			continue;
  
 		double elapsed = std::difftime(now, it->second.lastActivityTime);
 		if (elapsed > CLIENT_TIMEOUT)

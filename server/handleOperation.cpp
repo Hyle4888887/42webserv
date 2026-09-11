@@ -148,17 +148,48 @@ void	Server::handleWrite(std::size_t index)
 	int		fd = _pollFds[index].fd;
 	Client	&client = _clients[fd];
 
-	ssize_t	n = send(fd, client.outBuffer.c_str(), client.outBuffer.size(), 0);
-	if (n <= 0)
+	if (!client.outBuffer.empty())
 	{
-		std::cerr << "send error fd=" << fd << std::endl;
-		closeClient(index);
+		ssize_t n = send(fd, client.outBuffer.c_str(), client.outBuffer.size(), 0);
+		if (n < 0)
+		{
+			if (errno == EAGAIN || errno == EWOULDBLOCK)
+				return;
+			std::cerr << "send error fd=" << fd << std::endl;
+			closeClient(index);
+			return;
+		}
+		if (n == 0)
+		{
+			closeClient(index);
+			return;
+		}
+		client.outBuffer.erase(0, static_cast<std::size_t>(n));
+		client.lastActivityTime = std::time(NULL);
+	}
+
+	if (client.outBuffer.empty() && client.responseFileFd != -1)
+	{
+		char buffer[65536];
+		std::size_t requested = client.responseFileRemaining < sizeof(buffer)
+			? static_cast<std::size_t>(client.responseFileRemaining) : sizeof(buffer);
+		ssize_t n = read(client.responseFileFd, buffer, requested);
+		if (n < 0)
+		{
+			std::cerr << "file read error fd=" << fd << std::endl;
+			closeClient(index);
+			return;
+		}
+		if (n == 0)
+		{
+			closeClient(index);
+			return;
+		}
+		client.outBuffer.assign(buffer, static_cast<std::size_t>(n));
+		client.responseFileRemaining -= static_cast<unsigned long long>(n);
 		return;
 	}
- 
-	client.outBuffer.erase(0, static_cast<std::size_t>(n));
-	client.lastActivityTime = std::time(NULL);
- 
+
 	if (client.outBuffer.empty())
 	{
 		std::cout << "[i] Reponse envoyee fd=" << fd << std::endl;

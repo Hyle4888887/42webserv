@@ -147,7 +147,13 @@ std::string Response::handleGET(const Request &req, const LocationConfig &locati
     }
     bool ok = false; std::string body = readFile(path, ok);
     if (!ok) { return errorResponse(403, config); }
-    return makeResponse(200, getMime(path), body);
+    std::string disposition;
+    if (location.path != "/" && location.uploadEnabled && !location.uploadDir.empty())
+    {
+        std::string fileName = baseName(path);
+        disposition = "attachment; filename=\"" + fileName + "\"";
+    }
+    return makeResponse(200, getMime(path), body, disposition);
 }
 
 // Handle a POST request and store the uploaded body.

@@ -6,7 +6,7 @@
 /*   By: bozil <bozil@student.42.fr>                +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/06/02 12:52:06 by bozil             #+#    #+#             */
-/*   Updated: 2026/09/08 15:52:27 by bozil            ###   ########.fr       */
+/*   Updated: 2026/09/11 10:36:25 by bozil            ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -59,6 +59,8 @@ class Server
 	{
 		std::string inBuffer;
 		std::string outBuffer;
+		int responseFileFd;
+		unsigned long long responseFileRemaining;
 		bool responseReady;
 		time_t lastActivityTime;
 
@@ -79,7 +81,7 @@ class Server
 		std::size_t requestHeaderEnd;
 		std::string requestBody;
 
-		Client(): responseReady(false), lastActivityTime(std::time(NULL)), CGIActive(false), CGIPid(-1), CGIFdIn(-1), CGIFdOut(-1), listenFd(-1), CGIStart(0), requestInitialized(false), requestChunked(false), requestComplete(false), requestNeedChunkCRLF(false), requestBodyCursor(0), requestChunkRemaining(0), requestHeaderEnd(0) {}
+		Client(): responseFileFd(-1), responseFileRemaining(0), responseReady(false), lastActivityTime(std::time(NULL)), CGIActive(false), CGIPid(-1), CGIFdIn(-1), CGIFdOut(-1), listenFd(-1), CGIStart(0), requestInitialized(false), requestChunked(false), requestComplete(false), requestNeedChunkCRLF(false), requestBodyCursor(0), requestChunkRemaining(0), requestHeaderEnd(0) {}
 	};
 
 	bool setNonBlocking(int fd);

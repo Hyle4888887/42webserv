@@ -29,11 +29,14 @@ std::string Response::statusText(int code)
     }
 }
 
-std::string Response::makeResponse(int code, const std::string &mime, const std::string &body)
+std::string Response::makeResponse(int code, const std::string &mime, const std::string &body,
+                                   const std::string &contentDisposition)
 {
     std::string r;
     r  = "HTTP/1.1 " + toString(code) + " " + statusText(code) + "\r\n";
     r += "Content-Type: "   + mime          + "\r\n";
+    if (!contentDisposition.empty())
+        r += "Content-Disposition: " + contentDisposition + "\r\n";
     r += "Content-Length: " + toString((long)body.size()) + "\r\n";
     r += "Connection: close\r\n";
     r += "\r\n";

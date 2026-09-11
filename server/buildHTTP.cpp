@@ -127,6 +127,9 @@ void	Server::buildResponse(Client &client, const std::string &rawRequest)
 		client.outBuffer = "HTTP/1.1 500 Internal Server Error\r\nContent-Type: text/plain\r\nContent-Length: 0\r\nConnection: close\r\n\r\n";
 		return;
 	}
+	if (req.method == "GET" && Response::prepareDownload(req, *serverConfig,
+		client.responseFileFd, client.responseFileRemaining, client.outBuffer))
+		return;
 
 	client.outBuffer = Response::build(req, *serverConfig);
 }

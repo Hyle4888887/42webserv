@@ -14,6 +14,35 @@ static std::string joinPath(const std::string &base, const std::string &suffix)
     return base + suffix;
 }
 
+static int hexValue(char c)
+{
+    if (c >= '0' && c <= '9') return c - '0';
+    if (c >= 'A' && c <= 'F') return c - 'A' + 10;
+    if (c >= 'a' && c <= 'f') return c - 'a' + 10;
+    return -1;
+}
+
+static std::string decodeUrlPath(const std::string &path)
+{
+    std::string decoded;
+    for (std::size_t i = 0; i < path.size(); ++i)
+    {
+        if (path[i] == '%' && i + 2 < path.size())
+        {
+            int high = hexValue(path[i + 1]);
+            int low = hexValue(path[i + 2]);
+            if (high >= 0 && low >= 0)
+            {
+                decoded += static_cast<char>((high << 4) | low);
+                i += 2;
+                continue;
+            }
+        }
+        decoded += path[i];
+    }
+    return decoded;
+}
+
 // Detect the MIME type from a file extension.
 std::string Response::getMime(const std::string &path)
 {
@@ -133,11 +162,12 @@ const LocationConfig *Response::matchLocation(const std::string &path, const Ser
 // Resolve a request path against the matched location root.
 std::string Response::resolvePath(const std::string &urlPath, const LocationConfig &location)
 {
+    std::string decodedUrlPath = decodeUrlPath(urlPath);
     std::string::size_type pos = 0;
-    while ((pos = urlPath.find("..", pos)) != std::string::npos)
+    while ((pos = decodedUrlPath.find("..", pos)) != std::string::npos)
     {
-        bool before = (pos == 0 || urlPath[pos - 1] == '/');
-        bool after  = (pos + 2 == urlPath.size() || urlPath[pos + 2] == '/');
+        bool before = (pos == 0 || decodedUrlPath[pos - 1] == '/');
+        bool after  = (pos + 2 == decodedUrlPath.size() || decodedUrlPath[pos + 2] == '/');
         if (before && after)
             return "";
         pos += 2;
@@ -146,9 +176,36 @@ std::string Response::resolvePath(const std::string &urlPath, const LocationConf
     std::string fs = location.root;
     if (!fs.empty() && lastC(fs) == '/')
         fs.erase(fs.size() - 1);
-    std::string suffix = urlPath;
-    if (urlPath.compare(0, location.path.size(), location.path) == 0)
-        suffix = urlPath.substr(location.path.size());
+    std::string suffix = decodedUrlPath;
+    if (decodedUrlPath.compare(0, location.path.size(), location.path) == 0)
+        suffix = decodedUrlPath.substr(location.path.size());
     fs = joinPath(fs, suffix);
     return fs;
+}
+
+bool Response::prepareDownload(const Request &req, const ServerConfig &config,
+                               int &fileFd, unsigned long long &fileSize,
+                               std::string &headers)
+{
+    const LocationConfig *location = matchLocation(req.path, config);
+    if (!location || location->path == "/" || !location->uploadEnabled || location->uploadDir.empty())
+        return false;
+
+    std::string path = resolvePath(req.path, *location);
+    struct stat st;
+    if (path.empty() || stat(path.c_str(), &st) != 0 || !S_ISREG(st.st_mode))
+        return false;
+
+    fileFd = open(path.c_str(), O_RDONLY);
+    if (fileFd < 0)
+        return false;
+
+    fileSize = static_cast<unsigned long long>(st.st_size);
+    std::string fileName = path.substr(path.find_last_of("/\\") + 1);
+    headers = "HTTP/1.1 200 OK\r\n";
+    headers += "Content-Type: " + getMime(path) + "\r\n";
+    headers += "Content-Disposition: attachment; filename=\"" + fileName + "\"\r\n";
+    headers += "Content-Length: " + toString(static_cast<long>(fileSize)) + "\r\n";
+    headers += "Connection: close\r\n\r\n";
+    return true;
 }

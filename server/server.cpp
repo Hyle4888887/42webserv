@@ -105,6 +105,8 @@ void	Server::closeClient(std::size_t index)
 			close(c.CGIFdIn);
 		}
 	}
+	if (it != _clients.end() && it->second.responseFileFd != -1)
+		close(it->second.responseFileFd);
 
 	close(fd);
 	_clients.erase(fd);

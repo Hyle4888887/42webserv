@@ -1,6 +1,40 @@
 
 #include "HTTP.hpp"
 #include <algorithm>
+#include <cctype>
+
+static std::string encodeUrlSegment(const std::string &value)
+{
+    static const char hex[] = "0123456789ABCDEF";
+    std::string encoded;
+    for (std::size_t i = 0; i < value.size(); ++i)
+    {
+        unsigned char c = static_cast<unsigned char>(value[i]);
+        if (std::isalnum(c) || c == '-' || c == '_' || c == '.' || c == '~')
+            encoded += static_cast<char>(c);
+        else
+        {
+            encoded += '%';
+            encoded += hex[c >> 4];
+            encoded += hex[c & 0x0F];
+        }
+    }
+    return encoded;
+}
+
+static std::string escapeHtml(const std::string &value)
+{
+    std::string escaped;
+    for (std::size_t i = 0; i < value.size(); ++i)
+    {
+        if (value[i] == '&') escaped += "&amp;";
+        else if (value[i] == '<') escaped += "&lt;";
+        else if (value[i] == '>') escaped += "&gt;";
+        else if (value[i] == '"') escaped += "&quot;";
+        else escaped += value[i];
+    }
+    return escaped;
+}
 
 // Build a directory listing page for a readable folder.
 std::string Response::buildDirectoryListing(const std::string &urlPath, const std::string &fsPath)
@@ -17,7 +51,8 @@ std::string Response::buildDirectoryListing(const std::string &urlPath, const st
     {
         std::string name = entry->d_name;
         if (name == ".") continue;
-        html += "<a href=\"" + urlPath + (urlPath[urlPath.size()-1] == '/' ? "" : "/") + name + "\">" + name + "</a>\n";
+        html += "<a href=\"" + urlPath + (urlPath[urlPath.size()-1] == '/' ? "" : "/")
+            + encodeUrlSegment(name) + "\">" + escapeHtml(name) + "</a>\n";
     }
     closedir(dir);
     html += "</pre><hr></body></html>";

@@ -2,11 +2,11 @@
 #include "server.hpp"
 
 // Start a CGI process and register its pipes.
-void Server::startCGI(int clientFd, const std::string &interpreter, const std::string &scriptPath, const std::string &method, const std::string &query, const std::string &body)
+void Server::startCGI(int clientFd, const std::string &interpreter, const std::string &scriptPath, const std::string &method, const std::string &query, const std::string &requestUri, const std::string &body, const std::map<std::string, std::string> &headers, const std::string &serverName, const std::string &serverPort)
 {
     Client &client = _clients[clientFd];
     CGI *cgi = new CGI();
-    if (!cgi->start(interpreter, scriptPath, method, query, body)) {
+    if (!cgi->start(interpreter, scriptPath, method, query, requestUri, body, headers, serverName, serverPort)) {
         delete cgi;
         client.outBuffer = "HTTP/1.1 500 Internal Server Error\r\nContent-Type: text/html\r\nContent-Length: 0\r\nConnection: close\r\n\r\n";
         client.responseReady = true;
@@ -46,18 +46,47 @@ void Server::handleCGIRead(std::size_t index)
         client.CGIFdIn = -1; }
     finishCGI(clientFd);
 }
+void Server::handleCGIError(std::size_t index)
+{
+    int CGIFd = _pollFds[index].fd;
+    std::map<int,int>::iterator m = _CGIToClient.find(CGIFd);
+    if (m == _CGIToClient.end()) { _pollFds[index].fd = -1; return; }
+    int clientFd = m->second;
+    Client &client = _clients[clientFd];
+    if (client.CGIPid > 0) { kill(client.CGIPid, SIGKILL); waitpid(client.CGIPid, NULL, 0); client.CGIPid = -1; }
+    _CGIToClient.erase(CGIFd);
+    close(CGIFd);
+    client.CGIFdOut = -1;
+    _pollFds[index].fd = -1;
+    if (client.CGIFdIn != -1) {
+        _CGIToClient.erase(client.CGIFdIn);
+        disablePollFdByFd(client.CGIFdIn);
+        close(client.CGIFdIn);
+        client.CGIFdIn = -1;
+    }
+    client.CGIActive = false;
+    client.outBuffer = "HTTP/1.1 502 Bad Gateway\r\nContent-Type: text/html\r\nContent-Length: 0\r\nConnection: close\r\n\r\n";
+    client.responseReady = true;
+    setClientPollout(clientFd);
+}
 void Server::handleCGIWrite(std::size_t index)
 {
     int CGIFd = _pollFds[index].fd;
     std::map<int,int>::iterator m = _CGIToClient.find(CGIFd);
     if (m == _CGIToClient.end()) { _pollFds[index].fd = -1; return; }
     Client &client = _clients[m->second];
-    while (client.CGIInputOffset < client.CGIInput.size()) {
+    if (client.CGIInputOffset < client.CGIInput.size()) {
         ssize_t n = write(CGIFd, client.CGIInput.data() + client.CGIInputOffset,
                           client.CGIInput.size() - client.CGIInputOffset);
         if (n <= 0)
-            break;
-        client.CGIInputOffset += static_cast<std::size_t>(n);
+        {
+            _CGIToClient.erase(CGIFd);
+            close(CGIFd);
+            client.CGIFdIn = -1;
+            _pollFds[index].fd = -1;
+        }
+        else
+            client.CGIInputOffset += static_cast<std::size_t>(n);
     }
     if (client.CGIInputOffset == client.CGIInput.size()) {
         _CGIToClient.erase(CGIFd); close(CGIFd);

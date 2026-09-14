@@ -62,6 +62,9 @@ std::string Response::buildDirectoryListing(const std::string &urlPath, const st
 // Select the target location and dispatch the HTTP method.
 std::string Response::build(const Request &req, const ServerConfig &config)
 {
+    if (!req.valid)
+        return errorResponse(400, config);
+
     const LocationConfig *location = matchLocation(req.path, config);
     if (!location)
         return errorResponse(404, config);

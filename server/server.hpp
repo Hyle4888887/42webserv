@@ -6,7 +6,7 @@
 /*   By: bozil <bozil@student.42.fr>                +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/06/02 12:52:06 by bozil             #+#    #+#             */
-/*   Updated: 2026/09/14 10:47:32 by bozil            ###   ########.fr       */
+/*   Updated: 2026/09/15 00:24:18 by bozil            ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -111,8 +111,9 @@ class Server
 	Config _config;
 
 	bool isCGIFd(int fd) const;
-	void startCGI(int clientFd, const std::string &interpreter, const std::string &scriptPath, const std::string &method, const std::string &query, const std::string &body);
+	void startCGI(int clientFd, const std::string &interpreter, const std::string &scriptPath, const std::string &method, const std::string &query, const std::string &requestUri, const std::string &body, const std::map<std::string, std::string> &headers, const std::string &serverName, const std::string &serverPort);
 	void handleCGIRead(std::size_t index);
+	void handleCGIError(std::size_t index);
 	void handleCGIWrite(std::size_t index);
 	void finishCGI(int clientFd);
 

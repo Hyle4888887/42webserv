@@ -153,8 +153,6 @@ void	Server::handleWrite(std::size_t index)
 		ssize_t n = send(fd, client.outBuffer.c_str(), client.outBuffer.size(), 0);
 		if (n < 0)
 		{
-			if (errno == EAGAIN || errno == EWOULDBLOCK)
-				return;
 			std::cerr << "send error fd=" << fd << std::endl;
 			closeClient(index);
 			return;
@@ -244,6 +242,18 @@ void	Server::handleRead(std::size_t index)
 		client.requestComplete = !chunked;
 		client.requestBody.clear();
 	}
+	std::size_t maxBodySize = 0;
+	bool bodyLimitKnown = false;
+	Request limitRequest = parseRequest(client.inBuffer.substr(0, headersEnd + 4));
+	const ServerConfig *limitConfig = selectServerConfig(client.listenFd, limitRequest);
+	const LocationConfig *limitLocation = limitConfig == NULL ? NULL : matchLocation(limitRequest.path, *limitConfig);
+	if (limitConfig != NULL)
+	{
+		maxBodySize = limitConfig->clientMaxBodySize;
+		if (limitLocation != NULL && limitLocation->hasClientMaxBodySize)
+			maxBodySize = limitLocation->clientMaxBodySize;
+		bodyLimitKnown = true;
+	}
 	if (chunked && client.inBuffer.size() == client.requestBodyCursor)
 	{
 		Request headerRequest = parseRequest(client.inBuffer.substr(0, headersEnd + 4));
@@ -305,6 +315,15 @@ void	Server::handleRead(std::size_t index)
 			std::size_t take = available < client.requestChunkRemaining ? available : client.requestChunkRemaining;
 			if (take == 0)
 				return;
+			if (bodyLimitKnown && (client.requestBody.size() > maxBodySize
+				|| take > maxBodySize - client.requestBody.size()))
+			{
+				client.outBuffer = "HTTP/1.1 413 Payload Too Large\r\nContent-Type: text/html\r\nContent-Length: 0\r\nConnection: close\r\n\r\n";
+				client.responseReady = true;
+				_pollFds[index].events = POLLOUT;
+				_pollFds[index].events |= POLLRDHUP;
+				return;
+			}
 			client.requestBody.append(client.inBuffer, client.requestBodyCursor, take);
 			client.requestBodyCursor += take;
 			client.requestChunkRemaining -= take;
@@ -318,10 +337,10 @@ void	Server::handleRead(std::size_t index)
 		Request headersRequest = parseRequest(client.inBuffer.substr(0, headersEnd + 4));
 		const ServerConfig *headersConfig = selectServerConfig(client.listenFd, headersRequest);
 		const LocationConfig *headersLocation = headersConfig == NULL ? NULL : matchLocation(headersRequest.path, *headersConfig);
-		std::size_t maxBodySize = headersConfig == NULL ? 0 : headersConfig->clientMaxBodySize;
+		std::size_t contentLengthLimit = headersConfig == NULL ? 0 : headersConfig->clientMaxBodySize;
 		if (headersLocation != NULL && headersLocation->hasClientMaxBodySize)
-			maxBodySize = headersLocation->clientMaxBodySize;
-		if (headersConfig != NULL && contentLength > maxBodySize)
+			contentLengthLimit = headersLocation->clientMaxBodySize;
+		if (headersConfig != NULL && contentLength > contentLengthLimit)
 		{
 			client.outBuffer = "HTTP/1.1 413 Payload Too Large\r\nContent-Type: text/html\r\nContent-Length: 0\r\nConnection: close\r\n\r\n";
 			client.responseReady = true;
@@ -363,7 +382,16 @@ void	Server::handleRead(std::size_t index)
 			_pollFds[index].events |= POLLRDHUP;
 		}
 		else
-			startCGI(fd, interpreter, scriptPath, req.method, req.query, req.body);
+		{
+			std::string requestUri = req.path;
+			if (!req.query.empty())
+				requestUri += "?" + req.query;
+			startCGI(fd, interpreter, scriptPath, req.method, req.query, requestUri, req.body,
+				req.headers, serverConfig->serverName,
+				toString(static_cast<unsigned long>(_listenerPorts[client.listenFd])));
+			if (client.CGIActive)
+				_pollFds[index].events = 0;
+		}
 	}
 	else
 	{

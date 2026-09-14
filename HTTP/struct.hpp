@@ -13,6 +13,7 @@ struct Request
     std::string version;
     std::string body;
     std::map<std::string, std::string> headers;
+    bool valid;
 
-    Request() {}
+    Request() : valid(false) {}
 };

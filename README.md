@@ -1,4 +1,4 @@
-*This project has been created as part of the 42 curriculum by Bozil, Mbores & Mpoirier.*
+*This project has been created as part of the 42 curriculum by bozil, mbores, mpoirier.*
 
 # Description
 
@@ -36,6 +36,12 @@ You can also use the alternate test configuration:
 ./webserv config/test.conf
 ```
 
+To test two websites on different ports:
+
+```bash
+./webserv config/multi.conf
+```
+
 To open the web page on your web browser, use: http://localhost:portnumber/
 
 Makefile targets:
@@ -54,4 +60,4 @@ make re
 - NGINX configuration reference for server and location block structure.
 - Linux man pages for `socket`, `bind`, `listen`, `accept`, `poll`, `send`, `recv`, `fork`, `execve`, `pipe`, `dup2`, `waitpid`, `getaddrinfo`, `fcntl`, and file operations.
 
-AI was used to make the README.
+AI was used to help draft and review this README and to use the tester.

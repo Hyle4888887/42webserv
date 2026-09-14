@@ -46,18 +46,11 @@ void Server::run()
  
 			int fd = _pollFds[i].fd;
 			if (fd < 0 || revents == 0) { continue; }
-			if (revents & (POLLERR | POLLHUP | POLLNVAL))
+			if (revents & (POLLERR | POLLNVAL))
 			{
-				if (isCGIFd(fd)) { handleCGIRead(i); }
+				if (isCGIFd(fd)) { handleCGIError(i); }
 				else if (!isListener(fd))
 					closeClient(i);
-				continue;
-			}
- 
-			if (!isListener(fd) && (revents & POLLRDHUP))
-			{
-				std::cout << "[-] POLLRDHUP fd=" << fd << std::endl;
-				closeClient(i);
 				continue;
 			}
  
@@ -65,7 +58,7 @@ void Server::run()
 				handleNewConnection(fd);
 			else if (isCGIFd(fd))
 			{
-				if (revents & POLLIN) { handleCGIRead(i); }
+				if (revents & (POLLIN | POLLHUP)) { handleCGIRead(i); }
 				else if (revents & POLLOUT) { handleCGIWrite(i); }
 			}
 			else if (revents & POLLIN)
@@ -73,6 +66,11 @@ void Server::run()
 
 			else if (revents & POLLOUT)
 				handleWrite(i);
+
+			else if (!isListener(fd) && (revents & (POLLHUP | POLLRDHUP)))
+			{
+				handleRead(i);
+			}
 		}
 		compactPollFds();
 	}

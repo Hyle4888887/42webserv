@@ -35,7 +35,12 @@ Request Server::parseRequest(const std::string &rawRequest) const
 		std::string requestLine = rawRequest.substr(0, lineEnd);
 		std::istringstream firstLine(requestLine);
 		std::string target;
-		firstLine >> req.method >> target >> req.version;
+		std::string extra;
+		if (!(firstLine >> req.method >> target >> req.version) || (firstLine >> extra))
+			return req;
+		if (target.empty() || (req.version != "HTTP/1.0" && req.version != "HTTP/1.1"))
+			return req;
+		req.valid = true;
 		if (!target.empty())
 		{
 			req.path = target;

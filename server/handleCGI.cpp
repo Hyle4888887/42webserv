@@ -15,7 +15,7 @@ void Server::startCGI(int clientFd, const std::string &interpreter, const std::s
 
     client.CGIActive = true; client.CGIPid    = cgi->getPid();
     client.CGIFdOut  = cgi->getFdOut(); client.CGIFdIn   = cgi->getFdIn();
-    client.CGIInput  = body; client.CGIOutput.clear();
+    client.CGIInput  = body; client.CGIInputOffset = 0; client.CGIOutput.clear();
     client.CGIStart  = std::time(NULL);
     delete cgi;
     struct pollfd p;
@@ -32,7 +32,8 @@ void Server::handleCGIRead(std::size_t index)
     int CGIFd = _pollFds[index].fd;
     std::map<int,int>::iterator m = _CGIToClient.find(CGIFd);
     if (m == _CGIToClient.end()) { _pollFds[index].fd = -1; return; }
-    Client &client = _clients[m->second];
+    int clientFd = m->second;
+    Client &client = _clients[clientFd];
     char buf[4096]; ssize_t n = read(CGIFd, buf, sizeof(buf));
     if (n > 0) { client.CGIOutput.append(buf, n); return; }
     if (client.CGIPid > 0) { waitpid(client.CGIPid, NULL, 0); client.CGIPid = -1; }
@@ -43,7 +44,7 @@ void Server::handleCGIRead(std::size_t index)
         disablePollFdByFd(client.CGIFdIn);
         close(client.CGIFdIn);
         client.CGIFdIn = -1; }
-    finishCGI(m->second);
+    finishCGI(clientFd);
 }
 void Server::handleCGIWrite(std::size_t index)
 {
@@ -51,15 +52,17 @@ void Server::handleCGIWrite(std::size_t index)
     std::map<int,int>::iterator m = _CGIToClient.find(CGIFd);
     if (m == _CGIToClient.end()) { _pollFds[index].fd = -1; return; }
     Client &client = _clients[m->second];
-    while (!client.CGIInput.empty()) {
-        ssize_t n = write(CGIFd, client.CGIInput.c_str(), client.CGIInput.size());
+    while (client.CGIInputOffset < client.CGIInput.size()) {
+        ssize_t n = write(CGIFd, client.CGIInput.data() + client.CGIInputOffset,
+                          client.CGIInput.size() - client.CGIInputOffset);
         if (n <= 0)
             break;
-        client.CGIInput.erase(0, static_cast<std::size_t>(n));
+        client.CGIInputOffset += static_cast<std::size_t>(n);
     }
-    if (client.CGIInput.empty()) {
+    if (client.CGIInputOffset == client.CGIInput.size()) {
         _CGIToClient.erase(CGIFd); close(CGIFd);
-        client.CGIFdIn = -1; _pollFds[index].fd = -1; }
+        client.CGIFdIn = -1; client.CGIInput.clear(); client.CGIInputOffset = 0;
+        _pollFds[index].fd = -1; }
 }
 void Server::finishCGI(int clientFd)
 {

@@ -196,26 +196,23 @@ std::string Response::handlePOST(const Request &req, const LocationConfig &locat
     return makeResponse(201, "text/plain", "Created");
 }
 
-// Handle a DELETE request by removing the target file.
+// Handle a DELETE request by removing a file from the upload directory.
 std::string Response::handleDELETE(const Request &req, const LocationConfig &location, const ServerConfig &config)
 {
-    std::string path = resolvePath(req.path, location);
+    if (!location.uploadEnabled || location.uploadDir.empty())
+        return errorResponse(403, config);
+
+    std::string name = baseName(req.path);
+    if (name.empty() || name == "." || name == "..")
+        return errorResponse(403, config);
+
+    std::string path = location.uploadDir;
+    if (lastC(path) != '/') { path += "/"; }
+    path += name;
+
     struct stat st;
     if (stat(path.c_str(), &st) != 0)
-    {
-        if (location.uploadEnabled && !location.uploadDir.empty())
-        {
-            std::string uploadPath = location.uploadDir;
-            if (lastC(uploadPath) != '/') { uploadPath += "/"; }
-            uploadPath += req.path.substr(req.path.find_last_of('/') + 1);
-            if (stat(uploadPath.c_str(), &st) == 0)
-                path = uploadPath;
-            else
-                return errorResponse(404, config);
-        }
-        else
-            return errorResponse(404, config);
-    }
+        return errorResponse(404, config);
     if (S_ISDIR(st.st_mode)) { return errorResponse(403, config); }
     if (std::remove(path.c_str()) != 0) { return errorResponse(403, config); }
     return makeResponse(204, "text/plain", "");

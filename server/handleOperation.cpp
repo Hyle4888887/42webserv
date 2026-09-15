@@ -148,9 +148,10 @@ void	Server::handleWrite(std::size_t index)
 	int		fd = _pollFds[index].fd;
 	Client	&client = _clients[fd];
 
-	if (!client.outBuffer.empty())
+	if (client.outBufferOffset < client.outBuffer.size())
 	{
-		ssize_t n = send(fd, client.outBuffer.c_str(), client.outBuffer.size(), 0);
+		ssize_t n = send(fd, client.outBuffer.c_str() + client.outBufferOffset,
+			client.outBuffer.size() - client.outBufferOffset, 0);
 		if (n < 0)
 		{
 			std::cerr << "send error fd=" << fd << std::endl;
@@ -162,7 +163,12 @@ void	Server::handleWrite(std::size_t index)
 			closeClient(index);
 			return;
 		}
-		client.outBuffer.erase(0, static_cast<std::size_t>(n));
+		client.outBufferOffset += static_cast<std::size_t>(n);
+		if (client.outBufferOffset == client.outBuffer.size())
+		{
+			client.outBuffer.clear();
+			client.outBufferOffset = 0;
+		}
 		client.lastActivityTime = std::time(NULL);
 	}
 
@@ -184,6 +190,7 @@ void	Server::handleWrite(std::size_t index)
 			return;
 		}
 		client.outBuffer.assign(buffer, static_cast<std::size_t>(n));
+		client.outBufferOffset = 0;
 		client.responseFileRemaining -= static_cast<unsigned long long>(n);
 		return;
 	}
@@ -239,6 +246,7 @@ void	Server::handleRead(std::size_t index)
 		client.requestBodyCursor = headersEnd + 4;
 		client.requestChunkRemaining = 0;
 		client.requestNeedChunkCRLF = false;
+		client.requestFinalCRLFPending = false;
 		client.requestComplete = !chunked;
 		client.requestBody.clear();
 	}
@@ -276,6 +284,17 @@ void	Server::handleRead(std::size_t index)
 	{
 		while (!client.requestComplete)
 		{
+			if (client.requestFinalCRLFPending)
+			{
+				if (client.inBuffer.size() < client.requestBodyCursor + 2)
+					return;
+				if (client.inBuffer.compare(client.requestBodyCursor, 2, "\r\n") != 0)
+					return;
+				client.requestBodyCursor += 2;
+				client.requestFinalCRLFPending = false;
+				client.requestComplete = true;
+				break;
+			}
 			if (client.requestNeedChunkCRLF)
 			{
 				if (client.inBuffer.size() < client.requestBodyCursor + 2)
@@ -301,13 +320,8 @@ void	Server::handleRead(std::size_t index)
 				client.requestBodyCursor = lineEnd + 2;
 				if (chunkSize == 0)
 				{
-					if (client.inBuffer.size() < client.requestBodyCursor + 2)
-						return;
-					if (client.inBuffer.compare(client.requestBodyCursor, 2, "\r\n") != 0)
-						return;
-					client.requestBodyCursor += 2;
-					client.requestComplete = true;
-					break;
+					client.requestFinalCRLFPending = true;
+					continue;
 				}
 				client.requestChunkRemaining = static_cast<std::size_t>(chunkSize);
 			}
@@ -354,13 +368,26 @@ void	Server::handleRead(std::size_t index)
 	if (client.inBuffer.size() < totalNeeded)
 		return;
 
-	std::string rawRequest = client.inBuffer.substr(0, totalNeeded);
-	client.inBuffer.erase(0, totalNeeded);
-
-	Request req = parseRequest(rawRequest);
+	Request req;
 	if (chunked)
 	{
-		req.body = client.requestBody;
+		std::string rawHeaders = client.inBuffer.substr(0, headersEnd + 4);
+		client.inBuffer.erase(0, totalNeeded);
+		req = parseRequest(rawHeaders);
+		req.body.swap(client.requestBody);
+	}
+	else
+	{
+		std::string rawHeaders;
+		rawHeaders.swap(client.inBuffer);
+		req = parseRequest(rawHeaders.substr(0, headersEnd + 4));
+		req.body.swap(rawHeaders);
+		req.body.erase(0, headersEnd + 4);
+		if (req.body.size() > contentLength)
+		{
+			client.inBuffer.assign(req.body, contentLength, req.body.size() - contentLength);
+			req.body.erase(contentLength);
+		}
 	}
 
 	std::string interpreter;
@@ -395,14 +422,7 @@ void	Server::handleRead(std::size_t index)
 	}
 	else
 	{
-		if (chunked)
-		{
-			std::string normalizedRequest = rawRequest.substr(0, headersEnd + 4);
-			normalizedRequest += req.body;
-			buildResponse(client, normalizedRequest);
-		}
-		else
-			buildResponse(client, rawRequest);
+		buildResponse(client, req);
 		client.responseReady = true;
 		_pollFds[index].events = POLLOUT;
 		_pollFds[index].events |= POLLRDHUP;

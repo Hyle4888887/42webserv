@@ -126,6 +126,11 @@ const ServerConfig *Server::selectServerConfig(int listenFd, const Request &req)
 void	Server::buildResponse(Client &client, const std::string &rawRequest)
 {
 	Request req = parseRequest(rawRequest);
+	buildResponse(client, req);
+}
+
+void	Server::buildResponse(Client &client, const Request &req)
+{
 	const ServerConfig *serverConfig = selectServerConfig(client.listenFd, req);
 	if (serverConfig == NULL)
 	{

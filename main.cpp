@@ -2,6 +2,13 @@
 #include "webserv.hpp"
 #include "parser/configParser.hpp"
 
+volatile sig_atomic_t g_stop = 0;
+
+static void handleStopSignal(int)
+{
+	g_stop = 1;
+}
+
 // Program entry point.
 int	main(int argc, char **argv)
 {
@@ -19,6 +26,8 @@ int	main(int argc, char **argv)
 		const Config& config = parser.getConfig();
 
 		signal(SIGPIPE, SIG_IGN);
+		signal(SIGINT, handleStopSignal);
+		signal(SIGTERM, handleStopSignal);
 
 		Server	server(config);
 		if (config.servers.empty())

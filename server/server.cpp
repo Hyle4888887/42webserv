@@ -11,8 +11,25 @@ Server::Server(const Config &config) : _config(config)
 
 Server::~Server()
 {
-	for (std::size_t i = 0; i < _pollFds.size(); ++i)
-		close(_pollFds[i].fd);
+	for (std::map<int, Client>::iterator it = _clients.begin(); it != _clients.end(); ++it)
+	{
+		Client &client = it->second;
+		if (client.CGIPid > 0)
+		{
+			kill(client.CGIPid, SIGKILL);
+			waitpid(client.CGIPid, NULL, 0);
+		}
+		if (client.CGIFdIn != -1)
+			close(client.CGIFdIn);
+		if (client.CGIFdOut != -1)
+			close(client.CGIFdOut);
+		if (client.responseFileFd != -1)
+			close(client.responseFileFd);
+		close(it->first);
+	}
+	for (std::size_t i = 0; i < _listenFds.size(); ++i)
+		if (_listenFds[i] != -1)
+			close(_listenFds[i]);
 }
 
 // Run the main server loop.
@@ -24,14 +41,14 @@ void Server::run()
 		return;
 	}
  
-	while (true)
+	while (!g_stop)
 	{
 		int ready = poll(&_pollFds[0], static_cast<nfds_t>(_pollFds.size()), 5000);
  
 		if (ready < 0)
 		{
 			if (errno == EINTR)
-				continue;
+				break;
 			std::cerr << "poll: " << std::strerror(errno) << std::endl;
 			break;
 		}

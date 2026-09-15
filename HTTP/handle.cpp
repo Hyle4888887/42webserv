@@ -46,7 +46,8 @@ static std::string getHeaderValue(const Request &req, const std::string &name)
     return it->second;
 }
 
-static bool extractMultipartUpload(const Request &req, std::string &filename, std::string &content)
+static bool extractMultipartUpload(const Request &req, std::string &filename,
+                                   std::size_t &contentStart, std::size_t &contentEnd)
 {
     std::string contentType = getHeaderValue(req, "content-type");
     std::string lowerContentType = toLowerCopy(contentType);
@@ -120,12 +121,13 @@ static bool extractMultipartUpload(const Request &req, std::string &filename, st
     if (dataEnd == std::string::npos)
         return false;
 
+    contentStart = dataStart;
     if (dataEnd >= 2 && req.body.compare(dataEnd - 2, 2, "\r\n") == 0)
-        content = req.body.substr(dataStart, dataEnd - dataStart - 2);
+        contentEnd = dataEnd - 2;
     else if (dataEnd >= 1 && req.body[dataEnd - 1] == '\n')
-        content = req.body.substr(dataStart, dataEnd - dataStart - 1);
+        contentEnd = dataEnd - 1;
     else
-        content = req.body.substr(dataStart, dataEnd - dataStart);
+        contentEnd = dataEnd;
 
     return true;
 }
@@ -164,15 +166,15 @@ std::string Response::handlePOST(const Request &req, const LocationConfig &locat
     if (!location.uploadEnabled || location.uploadDir.empty()) { return errorResponse(403, config); }
     std::string name = req.path.substr(req.path.find_last_of('/') + 1);
     if (name.empty()) { name = "upload"; }
-    std::string payload = req.body;
+    const std::string *payload = &req.body;
+    std::size_t payloadStart = 0;
+    std::size_t payloadEnd = req.body.size();
 
     std::string multipartName;
-    std::string multipartBody;
-    if (extractMultipartUpload(req, multipartName, multipartBody))
+    if (extractMultipartUpload(req, multipartName, payloadStart, payloadEnd))
     {
         if (!multipartName.empty())
             name = multipartName;
-        payload = multipartBody;
     }
 
     std::string dest = location.uploadDir;
@@ -182,15 +184,17 @@ std::string Response::handlePOST(const Request &req, const LocationConfig &locat
     if (fd < 0)
         return errorResponse(500, config);
     size_t written = 0;
-    while (written < payload.size())
+    while (payloadStart < payloadEnd)
     {
-        ssize_t chunk = write(fd, payload.data() + written, payload.size() - written);
+        ssize_t chunk = write(fd, payload->data() + payloadStart,
+                              payloadEnd - payloadStart);
         if (chunk <= 0)
         {
             close(fd);
             return errorResponse(500, config);
         }
         written += static_cast<size_t>(chunk);
+        payloadStart += static_cast<size_t>(chunk);
     }
     close(fd);
     return makeResponse(201, "text/plain", "Created");

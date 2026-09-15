@@ -119,7 +119,11 @@ void ConfigParser::parseClientMaxBodySize(ServerConfig &server, const std::vecto
 		error(tokens[pos], "Number expected in 'client_max_body_size'");
 	if (tokens[pos].value[0] == '-')
 		error(tokens[pos], "'client_max_body_size' must be positive");
-	server.clientMaxBodySize = std::atoi(tokens[pos].value.c_str());
+	char *end = NULL;
+	unsigned long value = std::strtoul(tokens[pos].value.c_str(), &end, 10);
+	if (end == tokens[pos].value.c_str() || *end != '\0')
+		error(tokens[pos], "Invalid 'client_max_body_size'");
+	server.clientMaxBodySize = static_cast<size_t>(value);
 	pos++;
 	expect(tokens, pos, SEMICOLON);
 	pos++;
@@ -225,8 +229,12 @@ void ConfigParser::parseClientMaxBodySize(LocationConfig &location, const std::v
 	pos++;
 	if (!isNumber(tokens[pos].value) || tokens[pos].value[0] == '-')
 		error(tokens[pos], "'client_max_body_size' must be a positive number");
+	char *end = NULL;
+	unsigned long value = std::strtoul(tokens[pos].value.c_str(), &end, 10);
+	if (end == tokens[pos].value.c_str() || *end != '\0')
+		error(tokens[pos], "Invalid 'client_max_body_size'");
 	location.hasClientMaxBodySize = true;
-	location.clientMaxBodySize = std::atoi(tokens[pos].value.c_str());
+	location.clientMaxBodySize = static_cast<size_t>(value);
 	pos++;
 	expect(tokens, pos, SEMICOLON);
 	pos++;

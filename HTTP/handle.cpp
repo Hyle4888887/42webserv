@@ -163,7 +163,8 @@ std::string Response::handlePOST(const Request &req, const LocationConfig &locat
 {
     std::size_t maxBodySize = location.hasClientMaxBodySize ? location.clientMaxBodySize : config.clientMaxBodySize;
     if (req.body.size() > maxBodySize) { return errorResponse(413, config); }
-    if (!location.uploadEnabled || location.uploadDir.empty()) { return errorResponse(403, config); }
+    if (!location.uploadEnabled || location.uploadDir.empty())
+        return makeResponse(200, "text/plain", "OK");
     std::string name = req.path.substr(req.path.find_last_of('/') + 1);
     if (name.empty()) { name = "upload"; }
     const std::string *payload = &req.body;

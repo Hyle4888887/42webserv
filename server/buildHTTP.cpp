@@ -23,6 +23,22 @@ static std::string trimCopy(const std::string &s)
 	return s.substr(begin, end - begin);
 }
 
+// Collapse repeated slashes so "//directory" matches the "/directory" location.
+static std::string collapseSlashes(const std::string &path)
+{
+	std::string out;
+	out.reserve(path.size());
+	for (std::size_t i = 0; i < path.size(); ++i)
+	{
+		if (path[i] == '/' && !out.empty() && out[out.size() - 1] == '/')
+			continue;
+		out += path[i];
+	}
+	if (out.empty())
+		out = "/";
+	return out;
+}
+
 Request Server::parseRequest(const std::string &rawRequest) const
 {
 	Request req;
@@ -50,6 +66,7 @@ Request Server::parseRequest(const std::string &rawRequest) const
 				req.path = target.substr(0, qPos);
 				req.query = target.substr(qPos + 1);
 			}
+			req.path = collapseSlashes(req.path);
 		}
 	}
 

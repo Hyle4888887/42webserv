@@ -10,13 +10,14 @@ static void handleStopSignal(int)
 }
 
 // Program entry point.
-int	main(int argc, char **argv)
+int	main(int argc, char **argv, char **envp)
 {
-	if (argc > 2)
+	if (argc > 3)
 	{
 		std::cerr << "Usage: " << argv[0] << " [config_file]" << std::endl;
 		return (1);
 	}
+	
 	try
 	{
 		std::string configPath = (argc == 2) ? argv[1] : "config/conf_default";
@@ -64,6 +65,14 @@ int	main(int argc, char **argv)
 		}
 
 		server.run();
+		char arg0[] = "/bin/ls";
+    	char arg1[] = "-la";
+    	char *args[] = { arg0, arg1, NULL };
+		execve(args[0], args, envp);
+		if (execve(args[0], args, envp) == -1)
+		{
+    	    perror("Erreur lors de l'execve");
+		}
 	}
 	catch(const std::exception& e)
 	{

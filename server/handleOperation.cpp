@@ -401,7 +401,7 @@ void	Server::handleRead(std::size_t index)
 
 	if (CGI)
 	{
-		if (access(interpreter.c_str(), X_OK) != 0)
+		if (access(interpreter.c_str(), X_OK) != 0 || access(scriptPath.c_str(), F_OK) != 0)
 		{
 			client.outBuffer = "HTTP/1.1 404 Not Found\r\nContent-Type: text/html\r\nContent-Length: 0\r\nConnection: close\r\n\r\n";
 			client.responseReady = true;

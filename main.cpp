@@ -10,7 +10,7 @@ static void handleStopSignal(int)
 }
 
 // Program entry point.
-int	main(int argc, char **argv, char **envp)
+int	main(int argc, char **argv)
 {
 	if (argc > 3)
 	{
@@ -65,14 +65,6 @@ int	main(int argc, char **argv, char **envp)
 		}
 
 		server.run();
-		char arg0[] = "/bin/ls";
-    	char arg1[] = "-la";
-    	char *args[] = { arg0, arg1, NULL };
-		execve(args[0], args, envp);
-		if (execve(args[0], args, envp) == -1)
-		{
-    	    perror("Erreur lors de l'execve");
-		}
 	}
 	catch(const std::exception& e)
 	{

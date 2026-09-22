@@ -1,5 +1,14 @@
 #include "CGI.hpp"
 
+extern char **environ;
+
+// Return the "KEY" part of a "KEY=VALUE" environment entry.
+static std::string envKey(const std::string &entry)
+{
+    std::string::size_type eq = entry.find('=');
+    return (eq == std::string::npos) ? entry : entry.substr(0, eq);
+}
+
 static std::string interpreterPathFromScriptDirectory(const std::string &interpreter, const std::string &directory)
 {
     if (interpreter.empty() || interpreter[0] == '/')
@@ -63,7 +72,23 @@ static void executeChild(const std::string &interpreter, const std::string &scri
         }
         env.push_back("HTTP_" + name + "=" + it->second);
     }
-    
+
+    // Inherit the server's own environment (PATH, LANG, TZ, ...) for anything
+    // the meta-variables above don't already define, so scripts that shell
+    // out or rely on the interpreter's normal runtime setup still work.
+    for (char **e = environ; e != NULL && *e != NULL; ++e)
+    {
+        std::string entry(*e);
+        std::string key = envKey(entry);
+        bool overridden = false;
+        for (std::size_t i = 0; i < env.size(); ++i)
+        {
+            if (envKey(env[i]) == key) { overridden = true; break; }
+        }
+        if (!overridden)
+            env.push_back(entry);
+    }
+
     std::vector<char*> envp;
     for (size_t i = 0; i < env.size(); i++) { envp.push_back(const_cast<char*>(env[i].c_str())); }
     envp.push_back(NULL);

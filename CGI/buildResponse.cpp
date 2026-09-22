@@ -22,6 +22,9 @@ static std::string toLower(const std::string &name)
 // Rebuild the CGI output as a valid HTTP response.
 std::string CGI::buildResponse(const std::string &cgiOut)
 {
+    if (cgiOut.empty())
+        return "HTTP/1.1 500 Internal Server Error\r\nContent-Type: text/html\r\nContent-Length: 0\r\nConnection: close\r\n\r\n";
+
     std::string headerBlock, cgiBody; std::string::size_type sep = cgiOut.find("\r\n\r\n");
     size_t sepLen = 4;
     if (sep == std::string::npos) { sep = cgiOut.find("\n\n"); sepLen = 2; }

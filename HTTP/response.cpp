@@ -1,15 +1,3 @@
-/* ************************************************************************** */
-/*                                                                            */
-/*                                                        :::      ::::::::   */
-/*   response.cpp                                       :+:      :+:    :+:   */
-/*                                                    +:+ +:+         +:+     */
-/*   By: mpoirier <mpoirier@student.42nice.fr>      +#+  +:+       +#+        */
-/*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2026/06/10 10:45:23 by bozil             #+#    #+#             */
-/*   Updated: 2026/06/11 15:19:24 by mpoirier         ###   ########.fr       */
-/*                                                                            */
-/* ************************************************************************** */
-
 #include "HTTP.hpp"
 
 std::string Response::statusText(int code)
@@ -26,26 +14,29 @@ std::string Response::statusText(int code)
         case 403: return "Forbidden";
         case 404: return "Not Found";
         case 405: return "Method Not Allowed";
-        case 408: return "Request timeout";
+            case 408: return "Request Timeout";
         case 409: return "Conflict";
-        case 413: return "Content Too Large";
-        case 418: return "I’m a Teapot";
-        case 451: return "Unavailable for Legal Reasons";
+            case 413: return "Payload Too Large";
+            case 418: return "I'm a Teapot";
+            case 451: return "Unavailable For Legal Reasons";
         case 500: return "Internal Server Error";
         case 501: return "Not Implemented";
-        case 502: return "Bad gateway";
+            case 502: return "Bad Gateway";
         case 503: return "Service Unavailable";
-        case 504: return "Gateway timeout";
+            case 504: return "Gateway Timeout";
         case 508: return "Loop Detected";
         default:  return "Unknown";
     }
 }
 
-std::string Response::makeResponse(int code, const std::string &mime, const std::string &body)
+std::string Response::makeResponse(int code, const std::string &mime, const std::string &body,
+                                   const std::string &contentDisposition)
 {
     std::string r;
     r  = "HTTP/1.1 " + toString(code) + " " + statusText(code) + "\r\n";
     r += "Content-Type: "   + mime          + "\r\n";
+    if (!contentDisposition.empty())
+        r += "Content-Disposition: " + contentDisposition + "\r\n";
     r += "Content-Length: " + toString((long)body.size()) + "\r\n";
     r += "Connection: close\r\n";
     r += "\r\n";
@@ -53,10 +44,10 @@ std::string Response::makeResponse(int code, const std::string &mime, const std:
     return r;
 }
 
-std::string Response::makeRedirect(const std::string &location)
+std::string Response::makeRedirect(int code, const std::string &location)
 {
     std::string r;
-    r  = "HTTP/1.1 301 Moved Permanently\r\n";
+    r  = "HTTP/1.1 " + toString(code) + " " + statusText(code) + "\r\n";
     r += "Location: " + location + "\r\n";
     r += "Content-Length: 0\r\n";
     r += "Connection: close\r\n";

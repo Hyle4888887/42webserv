@@ -1,33 +1,23 @@
-/* ************************************************************************** */
-/*                                                                            */
-/*                                                        :::      ::::::::   */
-/*   handleCGI.cpp                                      :+:      :+:    :+:   */
-/*                                                    +:+ +:+         +:+     */
-/*   By: mpoirier <mpoirier@student.42nice.fr>      +#+  +:+       +#+        */
-/*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2026/06/09 13:54:03 by mpoirier          #+#    #+#             */
-/*   Updated: 2026/06/09 14:41:33 by mpoirier         ###   ########.fr       */
-/*                                                                            */
-/* ************************************************************************** */
 
 #include "server.hpp"
 
-void Server::startCGI(int clientFd, const std::string &interpreter, const std::string &scriptPath, const std::string &method, const std::string &query, const std::string &body)
+// Start a CGI process and register its pipes.
+void Server::startCGI(int clientFd, const std::string &interpreter, const std::string &scriptPath, const std::string &method, const std::string &query, const std::string &requestUri, const std::string &body, const std::map<std::string, std::string> &headers, const std::string &serverName, const std::string &serverPort)
 {
     Client &client = _clients[clientFd];
-    CGI *cgi = new CGI(); // ou un CGI membre du Client si tu préfères
-    if (!cgi->start(interpreter, scriptPath, method, query, body)) {
+    CGI *cgi = new CGI();
+    if (!cgi->start(interpreter, scriptPath, method, query, requestUri, body, headers, serverName, serverPort)) {
         delete cgi;
-        client.outBuffer = "HTTP/1.1 500 DONT KNOW WHAT IT IS 2.0\r\n Content-Type: text/html\r\nContent-Length: 0\r\nConnection: close\r\n\r\n";
+        client.outBuffer = "HTTP/1.1 500 Internal Server Error\r\nContent-Type: text/html\r\nContent-Length: 0\r\nConnection: close\r\n\r\n";
         client.responseReady = true;
         setClientPollout(clientFd);
         return; }
 
     client.CGIActive = true; client.CGIPid    = cgi->getPid();
     client.CGIFdOut  = cgi->getFdOut(); client.CGIFdIn   = cgi->getFdIn();
-    client.CGIInput  = body; client.CGIOutput.clear();
+    client.CGIInput  = body; client.CGIInputOffset = 0; client.CGIOutput.clear();
     client.CGIStart  = std::time(NULL);
-    delete cgi; // les fd et le pid sont copiés, l'objet n'est plus utile
+    delete cgi;
     struct pollfd p;
     p.fd = client.CGIFdOut; p.events = POLLIN; p.revents = 0;
     _pollFds.push_back(p); _CGIToClient[client.CGIFdOut] = clientFd;
@@ -42,19 +32,42 @@ void Server::handleCGIRead(std::size_t index)
     int CGIFd = _pollFds[index].fd;
     std::map<int,int>::iterator m = _CGIToClient.find(CGIFd);
     if (m == _CGIToClient.end()) { _pollFds[index].fd = -1; return; }
-    Client &client = _clients[m->second];
+    int clientFd = m->second;
+    Client &client = _clients[clientFd];
     char buf[4096]; ssize_t n = read(CGIFd, buf, sizeof(buf));
     if (n > 0) { client.CGIOutput.append(buf, n); return; }
-    // EOF -> le CGI a fini d'écrire
     if (client.CGIPid > 0) { waitpid(client.CGIPid, NULL, 0); client.CGIPid = -1; }
     _CGIToClient.erase(CGIFd); close(CGIFd);
     client.CGIFdOut = -1; _pollFds[index].fd = -1;
-    if (client.CGIFdIn != -1) { // stdin encore ouvert -> on le ferme
+    if (client.CGIFdIn != -1) {
         _CGIToClient.erase(client.CGIFdIn);
         disablePollFdByFd(client.CGIFdIn);
         close(client.CGIFdIn);
         client.CGIFdIn = -1; }
-    finishCGI(m->second);
+    finishCGI(clientFd);
+}
+void Server::handleCGIError(std::size_t index)
+{
+    int CGIFd = _pollFds[index].fd;
+    std::map<int,int>::iterator m = _CGIToClient.find(CGIFd);
+    if (m == _CGIToClient.end()) { _pollFds[index].fd = -1; return; }
+    int clientFd = m->second;
+    Client &client = _clients[clientFd];
+    if (client.CGIPid > 0) { kill(client.CGIPid, SIGKILL); waitpid(client.CGIPid, NULL, 0); client.CGIPid = -1; }
+    _CGIToClient.erase(CGIFd);
+    close(CGIFd);
+    client.CGIFdOut = -1;
+    _pollFds[index].fd = -1;
+    if (client.CGIFdIn != -1) {
+        _CGIToClient.erase(client.CGIFdIn);
+        disablePollFdByFd(client.CGIFdIn);
+        close(client.CGIFdIn);
+        client.CGIFdIn = -1;
+    }
+    client.CGIActive = false;
+    client.outBuffer = "HTTP/1.1 502 Bad Gateway\r\nContent-Type: text/html\r\nContent-Length: 0\r\nConnection: close\r\n\r\n";
+    client.responseReady = true;
+    setClientPollout(clientFd);
 }
 void Server::handleCGIWrite(std::size_t index)
 {
@@ -62,12 +75,23 @@ void Server::handleCGIWrite(std::size_t index)
     std::map<int,int>::iterator m = _CGIToClient.find(CGIFd);
     if (m == _CGIToClient.end()) { _pollFds[index].fd = -1; return; }
     Client &client = _clients[m->second];
-    if (!client.CGIInput.empty()) {
-        ssize_t n = write(CGIFd, client.CGIInput.c_str(), client.CGIInput.size());
-        if (n > 0) { client.CGIInput.erase(0, n); } }
-    if (client.CGIInput.empty()) { // tout envoyé -> EOF pour le CGI
+    if (client.CGIInputOffset < client.CGIInput.size()) {
+        ssize_t n = write(CGIFd, client.CGIInput.data() + client.CGIInputOffset,
+                          client.CGIInput.size() - client.CGIInputOffset);
+        if (n <= 0)
+        {
+            _CGIToClient.erase(CGIFd);
+            close(CGIFd);
+            client.CGIFdIn = -1;
+            _pollFds[index].fd = -1;
+        }
+        else
+            client.CGIInputOffset += static_cast<std::size_t>(n);
+    }
+    if (client.CGIInputOffset == client.CGIInput.size()) {
         _CGIToClient.erase(CGIFd); close(CGIFd);
-        client.CGIFdIn = -1; _pollFds[index].fd = -1; }
+        client.CGIFdIn = -1; client.CGIInput.clear(); client.CGIInputOffset = 0;
+        _pollFds[index].fd = -1; }
 }
 void Server::finishCGI(int clientFd)
 {

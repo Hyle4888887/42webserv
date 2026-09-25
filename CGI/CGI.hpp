@@ -19,6 +19,7 @@
 #include <string>
 #include <sstream>
 #include <vector>
+#include <map>
 #include <cstdlib>
 
 #include "../utils/utils.hpp"
@@ -37,7 +38,7 @@ class CGI
         int getFdOut(void) const;
 
         // start et buildResponse sont chacune dans leur fichier
-        bool start(const std::string &interpreter, const std::string &scriptPath, const std::string &method, const std::string &query, const std::string &body);
+        bool start(const std::string &interpreter, const std::string &scriptPath, const std::string &method, const std::string &query, const std::string &requestUri, const std::string &body, const std::map<std::string, std::string> &headers, const std::string &serverName, const std::string &serverPort);
         static std::string buildResponse(const std::string &cgiOut);
         
 };

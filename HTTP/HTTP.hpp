@@ -1,14 +1,3 @@
-/* ************************************************************************** */
-/*                                                                            */
-/*                                                        :::      ::::::::   */
-/*   HTTP.hpp                                           :+:      :+:    :+:   */
-/*                                                    +:+ +:+         +:+     */
-/*   By: mpoirier <mpoirier@student.42nice.fr>      +#+  +:+       +#+        */
-/*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2026/06/10 10:22:11 by bozil             #+#    #+#             */
-/*   Updated: 2026/06/11 15:15:01 by mpoirier         ###   ########.fr       */
-/*                                                                            */
-/* ************************************************************************** */
 
 #pragma once
 
@@ -27,28 +16,34 @@
 
 #include "struct.hpp"
 #include "../utils/utils.hpp"
+#include "../parser/locationConfig.hpp"
+#include "../parser/serverConfig.hpp"
 
 class Response
 {
   public:
     static std::string build(const Request &req, const ServerConfig &config);
+    static bool prepareDownload(const Request &req, const ServerConfig &config,
+                                int &fileFd, unsigned long long &fileSize,
+                                std::string &headers);
 
   private:
     Response();
     
     /*HTTP*/
-    static std::string handleGET   (const Request &req, const RouteConfig &route, const ServerConfig &config);
-    static std::string handlePOST  (const Request &req, const RouteConfig &route, const ServerConfig &config);
-    static std::string handleDELETE(const Request &req, const RouteConfig &route, const ServerConfig &config);
+    static std::string handleGET   (const Request &req, const LocationConfig &location, const ServerConfig &config);
+    static std::string handlePOST  (const Request &req, const LocationConfig &location, const ServerConfig &config);
+    static std::string handleDELETE(const Request &req, const LocationConfig &location, const ServerConfig &config);
 
     /*Helpers*/
-    static const RouteConfig *matchRoute(const std::string &path, const ServerConfig &config);
-    static std::string        resolvePath(const std::string &urlPath, const RouteConfig &route);
+    static const LocationConfig *matchLocation(const std::string &path, const ServerConfig &config);
+    static std::string        resolvePath(const std::string &urlPath, const LocationConfig &location);
     static std::string        getMime(const std::string &path);
     static std::string        readFile(const std::string &path, bool &ok);
     static std::string        buildDirectoryListing(const std::string &urlPath, const std::string &fsPath);
-    static std::string        makeResponse(int code, const std::string &mime, const std::string &body);
-    static std::string        makeRedirect(const std::string &location);
+    static std::string        makeResponse(int code, const std::string &mime, const std::string &body,
+                         const std::string &contentDisposition = "");
+    static std::string        makeRedirect(int code, const std::string &location);
     static std::string        errorResponse(int code, const ServerConfig &config);
     static std::string        statusText(int code);
 };

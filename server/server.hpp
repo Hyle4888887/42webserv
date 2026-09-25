@@ -6,7 +6,7 @@
 /*   By: bozil <bozil@student.42.fr>                +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/06/02 12:52:06 by bozil             #+#    #+#             */
-/*   Updated: 2026/06/10 11:06:45 by bozil            ###   ########.fr       */
+/*   Updated: 2026/09/15 13:45:08 by bozil            ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -18,6 +18,7 @@
 #include <sys/socket.h>
 #include <sys/wait.h>
 #include <netinet/in.h>
+#include <netdb.h>
 
 #include <string>
 #include <sstream>
@@ -32,6 +33,7 @@
 #include <cstring>
 
 #include "../HTTP/HTTP.hpp"
+#include "../parser/config.hpp"
 #include "../CGI/CGI.hpp"
 #include "../utils/utils.hpp"
 
@@ -39,15 +41,18 @@
 # define POLLRDHUP 0
 #endif
 
-#define CLIENT_TIMEOUT 20
-#define CGI_TIMEOUT 3
+#define CLIENT_TIMEOUT 180
+#define CGI_TIMEOUT 300
+
+extern volatile sig_atomic_t g_stop;
 
 class Server
 {
   public:
 	Server();
+	explicit Server(const Config &config);
 	~Server();
-	bool addListener(int port);
+	bool addListener(const std::string &host, int port);
 	void run();
 
   private:
@@ -56,6 +61,9 @@ class Server
 	{
 		std::string inBuffer;
 		std::string outBuffer;
+		std::size_t outBufferOffset;
+		int responseFileFd;
+		unsigned long long responseFileRemaining;
 		bool responseReady;
 		time_t lastActivityTime;
 
@@ -63,15 +71,26 @@ class Server
 		pid_t       CGIPid;
 		int         CGIFdIn;
 		int         CGIFdOut;
+		int         listenFd;
 		std::string CGIInput;
+		std::size_t CGIInputOffset;
 		std::string CGIOutput;
 		time_t      CGIStart;
+		bool        requestInitialized;
+		bool        requestChunked;
+		bool        requestComplete;
+		bool        requestNeedChunkCRLF;
+		bool        requestFinalCRLFPending;
+		std::size_t requestBodyCursor;
+		std::size_t requestChunkRemaining;
+		std::size_t requestHeaderEnd;
+		std::string requestBody;
 
-		Client(): responseReady(false), lastActivityTime(std::time(NULL)), CGIActive(false), CGIPid(-1), CGIFdIn(-1), CGIFdOut(-1), CGIStart(0) {}
+		Client(): outBufferOffset(0), responseFileFd(-1), responseFileRemaining(0), responseReady(false), lastActivityTime(std::time(NULL)), CGIActive(false), CGIPid(-1), CGIFdIn(-1), CGIFdOut(-1), listenFd(-1), CGIInputOffset(0), CGIStart(0), requestInitialized(false), requestChunked(false), requestComplete(false), requestNeedChunkCRLF(false), requestFinalCRLFPending(false), requestBodyCursor(0), requestChunkRemaining(0), requestHeaderEnd(0) {}
 	};
 
 	bool setNonBlocking(int fd);
-	int ListeningSocket(int port);
+	int ListeningSocket(const std::string &host, int port);
 	bool isListener(int fd) const;
 
 	void handleNewConnection(int listenFd);
@@ -79,6 +98,12 @@ class Server
 	void handleWrite(std::size_t index);
 	void closeClient(std::size_t index);
 	void buildResponse(Client &client, const std::string &rawRequest);
+	void buildResponse(Client &client, const Request &req);
+	Request parseRequest(const std::string &rawRequest) const;
+	const ServerConfig *selectServerConfig(int listenFd, const Request &req) const;
+	const LocationConfig *matchLocation(const std::string &path, const ServerConfig &config) const;
+	std::string resolvePath(const std::string &urlPath, const LocationConfig &location) const;
+	bool findCgiTarget(const Request &req, const ServerConfig &config, std::string &interpreter, std::string &scriptPath) const;
 	void checkTimeouts();
 	void checkCGITimeouts();
 
@@ -86,11 +111,14 @@ class Server
 	std::vector<struct pollfd> _pollFds;
 	std::map<int, Client> _clients;
 	std::map<int, int> _CGIToClient;
-	ServerConfig _config;
+	std::map<int, std::string> _listenerHosts;
+	std::map<int, int> _listenerPorts;
+	Config _config;
 
 	bool isCGIFd(int fd) const;
-	void startCGI(int clientFd, const std::string &interpreter, const std::string &scriptPath, const std::string &method, const std::string &query, const std::string &body);
+	void startCGI(int clientFd, const std::string &interpreter, const std::string &scriptPath, const std::string &method, const std::string &query, const std::string &requestUri, const std::string &body, const std::map<std::string, std::string> &headers, const std::string &serverName, const std::string &serverPort);
 	void handleCGIRead(std::size_t index);
+	void handleCGIError(std::size_t index);
 	void handleCGIWrite(std::size_t index);
 	void finishCGI(int clientFd);
 

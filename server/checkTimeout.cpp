@@ -1,14 +1,3 @@
-/* ************************************************************************** */
-/*                                                                            */
-/*                                                        :::      ::::::::   */
-/*   checkTimeout.cpp                                   :+:      :+:    :+:   */
-/*                                                    +:+ +:+         +:+     */
-/*   By: mpoirier <mpoirier@student.42nice.fr>      +#+  +:+       +#+        */
-/*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2026/06/09 14:01:21 by mpoirier          #+#    #+#             */
-/*   Updated: 2026/06/09 14:01:56 by mpoirier         ###   ########.fr       */
-/*                                                                            */
-/* ************************************************************************** */
 
 #include "server.hpp"
 
@@ -24,13 +13,13 @@ void Server::checkCGITimeouts()
         if (c.CGIFdOut != -1) { _CGIToClient.erase(c.CGIFdOut); disablePollFdByFd(c.CGIFdOut); close(c.CGIFdOut); c.CGIFdOut = -1; }
         if (c.CGIFdIn  != -1) { _CGIToClient.erase(c.CGIFdIn);  disablePollFdByFd(c.CGIFdIn);  close(c.CGIFdIn);  c.CGIFdIn  = -1; }
         c.CGIActive = false;
-        c.outBuffer = "HTTP/1.1 504 Gateway TimeOut\r\n Content-Type: text/html\r\nContent-Length: 0\r\nConnection: close\r\n\r\n";
+		c.outBuffer = "HTTP/1.1 504 Gateway Timeout\r\nContent-Type: text/html\r\nContent-Length: 0\r\nConnection: close\r\n\r\n";
         c.responseReady = true;
         setClientPollout(it->first);
     }
 }
 
-/*ferme les clients inactifs*/
+// Close clients that have been idle for too long.
 void Server::checkTimeouts()
 {
 	time_t now = std::time(NULL);
@@ -44,6 +33,8 @@ void Server::checkTimeouts()
  
 		std::map<int, Client>::iterator it = _clients.find(fd);
 		if (it == _clients.end())
+			continue;
+		if (it->second.CGIActive)
 			continue;
  
 		double elapsed = std::difftime(now, it->second.lastActivityTime);

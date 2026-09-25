@@ -1,18 +1,7 @@
-/* ************************************************************************** */
-/*                                                                            */
-/*                                                        :::      ::::::::   */
-/*   socket.cpp                                         :+:      :+:    :+:   */
-/*                                                    +:+ +:+         +:+     */
-/*   By: mpoirier <mpoirier@student.42nice.fr>      +#+  +:+       +#+        */
-/*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2026/06/09 13:54:14 by mpoirier          #+#    #+#             */
-/*   Updated: 2026/06/09 13:57:31 by mpoirier         ###   ########.fr       */
-/*                                                                            */
-/* ************************************************************************** */
 
 #include "server.hpp"
 
-/*rend le socket non bloquant*/
+// Put a socket into non-blocking mode.
 bool	Server::setNonBlocking(int fd)
 {
 	if (fcntl(fd, F_SETFL, O_NONBLOCK) < 0)
@@ -23,71 +12,87 @@ bool	Server::setNonBlocking(int fd)
 	return true;
 }
 
-/*configure et crée un socket d'écoute*/
-int	Server::ListeningSocket(int port)
+// Configure and bind a listening socket.
+int	Server::ListeningSocket(const std::string &host, int port)
 {
-	int	fd = socket(AF_INET, SOCK_STREAM, 0);
+	struct addrinfo hints;
+	std::memset(&hints, 0, sizeof(hints));
+	hints.ai_family = AF_INET;
+	hints.ai_socktype = SOCK_STREAM;
+	hints.ai_flags = AI_PASSIVE;
+
+	std::string portStr = toString(static_cast<unsigned long>(port));
+	const char *node = (host.empty() || host == "0.0.0.0") ? NULL : host.c_str();
+	struct addrinfo *result = NULL;
+	int gai = getaddrinfo(node, portStr.c_str(), &hints, &result);
+	if (gai != 0)
+	{
+		std::cerr << "getaddrinfo: " << gai_strerror(gai) << std::endl;
+		return -1;
+	}
+
+	int fd = -1;
+	for (struct addrinfo *it = result; it != NULL; it = it->ai_next)
+	{
+		fd = socket(it->ai_family, it->ai_socktype, it->ai_protocol);
+		if (fd < 0)
+			continue;
+
+		int opt = 1;
+		if (setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) < 0)
+		{
+			close(fd);
+			fd = -1;
+			continue;
+		}
+		if (bind(fd, it->ai_addr, it->ai_addrlen) < 0)
+		{
+			close(fd);
+			fd = -1;
+			continue;
+		}
+		if (listen(fd, 128) < 0)
+		{
+			close(fd);
+			fd = -1;
+			continue;
+		}
+		if (!setNonBlocking(fd))
+		{
+			close(fd);
+			fd = -1;
+			continue;
+		}
+		break;
+	}
+	freeaddrinfo(result);
 	if (fd < 0)
-	{
-		std::cerr << "socket: " << std::strerror(errno) << std::endl;
-		return -1;
-	}
-
-	int	opt = 1;
-	if (setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) < 0)
-	{
-		std::cerr << "setsockopt: " << std::strerror(errno) << std::endl;
-		close(fd);
-		return -1;
-	}
-
-	struct sockaddr_in	addr;
-	std::memset(&addr, 0, sizeof(addr));
-	addr.sin_family      = AF_INET;
-	addr.sin_addr.s_addr = htonl(INADDR_ANY);
-	addr.sin_port        = htons(static_cast<unsigned short>(port));
-
-	if (bind(fd, reinterpret_cast<struct sockaddr *>(&addr), sizeof(addr)) < 0)
-	{
-		std::cerr << "bind (port " << port << "): "
-				  << std::strerror(errno) << std::endl;
-		close(fd);
-		return -1;
-	}
-	if (listen(fd, 128) < 0)
-	{
-		std::cerr << "listen: " << std::strerror(errno) << std::endl;
-		close(fd);
-		return -1;
-	}
-	if (!setNonBlocking(fd))
-	{
-		close(fd);
-		return -1;
-	}
+		std::cerr << "Unable to bind listener on " << host << ':' << port << std::endl;
 	return fd;
 }
 
-/*crée un socket d'écoute*/
-bool	Server::addListener(int port)
+// Add a listening socket to the poll set.
+bool	Server::addListener(const std::string &host, int port)
 {
-	int	fd = ListeningSocket(port);
+	int	fd = ListeningSocket(host, port);
 	if (fd < 0)
 		return false;
 
 	struct pollfd	pfd;
 	pfd.fd      = fd;
-	pfd.events  = POLLIN;	// read
+	pfd.events  = POLLIN;
 	pfd.revents = 0;
 	_pollFds.push_back(pfd);
 	_listenFds.push_back(fd);
+	_listenerHosts[fd] = host;
+	_listenerPorts[fd] = port;
 
-	std::cout << "Listening on port " << port << " (fd=" << fd << ")"
+	std::cout << "Listening on " << host << ':' << port << " (fd=" << fd << ")"
 			  << std::endl;
 	return true;
 }
 
-/*si fd est un socket d'écoute renvoie true*/
+// Check whether a file descriptor belongs to a listening socket.
 bool	Server::isListener(int fd) const
 {
 	for (std::size_t i = 0; i < _listenFds.size(); ++i)

@@ -1,32 +1,26 @@
 #include "server.hpp"
 
-static bool getContentLength(const std::string &headersBlock, std::size_t &length)
+// content-lenght is -> 0: absent, 1: valid, -1: invalid or duplicate 
+static int getContentLength(const std::string &headersBlock, std::size_t &lenght)
 {
 	std::string lower = headersBlock;
 	for (std::size_t i = 0; i < lower.size(); ++i)
 		lower[i] = static_cast<char>(std::tolower(static_cast<unsigned char>(lower[i])));
-
-	std::string::size_type pos = lower.find("content-length:");
-	if (pos == std::string::npos)
-		return false;
-	pos += 16; // length of "content-length:"
-
+	const std::string key = "\r\ncontent-length:";
+	std::string::size_type pos = lower.find(key);
+	if (pos == std::string::npos) return 0;
+	if (lower.find(key, pos + key.size()) != std::string::npos) return -1;
+	pos += key.size();
 	std::string::size_type lineEnd = headersBlock.find("\r\n", pos);
-	if (lineEnd == std::string::npos)
-		lineEnd = headersBlock.size();
-
+	if (lineEnd == std::string::npos) lineEnd = headersBlock.size();
 	std::string value = headersBlock.substr(pos, lineEnd - pos);
-	std::string::size_type b = 0, e = value.size();
-	while (b < e && std::isspace(static_cast<unsigned char>(value[b])))
-		++b;
-	while (e > b && std::isspace(static_cast<unsigned char>(value[e - 1])))
-		--e;
-	value = value.substr(b, e - b);
-	if (value.empty())
-		return false;
-
-	length = static_cast<std::size_t>(std::atol(value.c_str()));
-	return true;
+	std::string::size_type b = value.find_first_not_of(" \t");
+	if (b == std::string::npos) return -1;
+	std::string::size_type e = value.find_last_not_of(" \t");
+	value = value.substr(b, e - b + 1);
+	if (value.find_first_not_of("0123456789") != std::string::npos) return -1;
+	std::stringstream iss(value); iss >> lenght;
+	return iss.fail() ? -1 : 1;
 }
 
 static std::string joinPath(const std::string &base, const std::string &suffix)
@@ -232,12 +226,20 @@ void	Server::handleRead(std::size_t index)
 
 	std::string headersBlock = client.inBuffer.substr(0, headersEnd);
 	std::size_t contentLength = 0;
-	bool hasContentLength = getContentLength(headersBlock, contentLength);
+	int contentLengthStatus = getContentLength(headersBlock, contentLength);
+	bool hasContentLength = (contentLengthStatus == 1);
 	std::string lowerHeaders = headersBlock;
 	for (std::size_t i = 0; i < lowerHeaders.size(); ++i)
 		lowerHeaders[i] = static_cast<char>(std::tolower(static_cast<unsigned char>(lowerHeaders[i])));
 	bool chunked = lowerHeaders.find("transfer-encoding:") != std::string::npos
 		&& lowerHeaders.find("chunked") != std::string::npos;
+	if (contentLengthStatus == -1 || (hasContentLength && chunked))
+	{
+		client.outBuffer = "HTTP/1.1 400 Bad Request\r\nContent-Type: text/html\r\nContent-Length: 0\r\nConnection: close\r\n\r\n";
+		client.responseReady = true;
+		_pollFds[index].events = POLLOUT | POLLRDHUP;
+		return;
+	}
 	if (!client.requestInitialized)
 	{
 		client.requestInitialized = true;

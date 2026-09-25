@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   server.hpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: bozil <bozil@student.42.fr>                +#+  +:+       +#+        */
+/*   By: mpoirier <mpoirier@student.42nice.fr>      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/06/02 12:52:06 by bozil             #+#    #+#             */
-/*   Updated: 2026/09/15 13:45:08 by bozil            ###   ########.fr       */
+/*   Updated: 2026/09/25 14:26:03 by mpoirier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -42,7 +42,7 @@
 #endif
 
 #define CLIENT_TIMEOUT 180
-#define CGI_TIMEOUT 300
+#define CGI_TIMEOUT 20
 
 extern volatile sig_atomic_t g_stop;
 

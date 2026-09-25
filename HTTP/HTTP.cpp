@@ -110,22 +110,7 @@ std::string Response::readFile(const std::string &path, bool &ok)
     return oss.str();
 }
 
-<<<<<<< HEAD
-=======
-// Build a fallback HTML error page.
-static std::string errorBody(const std::string code, const std::string status)
-{
-    std::string res;
-    res += "<html><head><title>" + code + " " + status + "</title></head>";
-    res += "<body style=\"text-align:center; font-family:sans-serif; margin-top:50px;\">";
-    res += "<h1>" + code + " " + status + "</h1>";
-    res += "<p>The server could not complete the request.</p>";
-    res += "</body></html>";
-    return res;
-}
-
 // Build an error response using a configured page when available.
->>>>>>> preview
 std::string Response::errorResponse(int code, const ServerConfig &config)
 {
     std::map<int, std::string>::const_iterator it = config.errorPages.find(code);

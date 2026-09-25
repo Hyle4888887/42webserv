@@ -1,0 +1,37 @@
+HTTP: HyperText Transfert Protocol est un protocole de communication 
+qui permet d'échanger des données entre un client et un serveur.
+
+WWW: World Whide Web, est un système public d'information qui permet 
+de consulter des pages reliées par des liens hypertextes sur Internet.
+
+poll(): est une fonction "multiplexe", ce qui veut dire qu'il peut en un seul thread 
+read & write plusieurs cannaux d'entree sortie simultanement.
+
+RFC: ou "Request For Comments" est un document technique officiel numéroté qui décrit 
+et définit les protocoles, les normes, les architectures et les méthodes utilisés 
+sur le réseau Internet.
+
+Telnet: ou "Terminal network" est un protocole utilise par tout 
+les reseau TCP/IP (Transmission Control Procotcol/Internet Procotcol) cree en 1969
+et est normalise par IETF (Internet Enginering Task Force) grace 
+aux normes RFC 15 854 et 855.
+Pour l'utiliser ouvrez votre terminal et tapez la commande telnet suivie 
+de l'adresse IP (ou du nom d'hôte) et du numéro de port souhaité.
+"sudo apt-get install telnet" (sous VM)
+
+NGINX: cree en 2004, est un logiciel libre de serveur web et de proxy inverse
+elle utilise une architecture asynchrone et événementielle lui permettant de gérer 
+plusieurs connexions simultanées avec une consommation de mémoire minime.
+
+CGI: ou "Common Gateway Interface" permet à un serveur web de communiquer avec 
+des programmes externes.
+
+Stress test: est une simulation informatique ou pratique conçue pour évaluer 
+la robustesse d'un système, d'une organisation ou d'un organisme face à 
+des conditions extrêmes ou anormales.
+"sudo apt install stress s-tui stress-ng"(sous VM)
+
+Siege test: Permet de tester le serveur, utilisation:
+"sudo apt install siege"
+siege -c50 -t30S https://example.com (c = nombres de requetes, t = temps)
+siege -f urls.txt -c25 -t1M (f = fichier)

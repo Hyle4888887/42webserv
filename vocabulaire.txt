@@ -15,9 +15,9 @@ Telnet: ou "Terminal network" est un protocole utilise par tout
 les reseau TCP/IP (Transmission Control Procotcol/Internet Procotcol) cree en 1969
 et est normalise par IETF (Internet Enginering Task Force) grace 
 aux normes RFC 15 854 et 855.
-Pour l'utiliser ouvrez votre terminal et tapez la commande telnet suivie 
-de l'adresse IP (ou du nom d'hôte) et du numéro de port souhaité.
+Utilisation:
 "sudo apt-get install telnet" (sous VM)
+telnet IP adress/host port(exmple: telnet 127.0.0.1 3000)
 
 NGINX: cree en 2004, est un logiciel libre de serveur web et de proxy inverse
 elle utilise une architecture asynchrone et événementielle lui permettant de gérer 
@@ -32,6 +32,6 @@ des conditions extrêmes ou anormales.
 "sudo apt install stress s-tui stress-ng"(sous VM)
 
 Siege test: Permet de tester le serveur, utilisation:
-"sudo apt install siege"
+"sudo apt install siege"(sous VM)
 siege -c50 -t30S https://example.com (c = nombres de requetes, t = temps)
 siege -f urls.txt -c25 -t1M (f = fichier)

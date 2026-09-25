@@ -1,7 +1,7 @@
 HTTP: HyperText Transfert Protocol est un protocole de communication 
 qui permet d'échanger des données entre un client et un serveur.
 
-WWW: World Whide Web, est un système public d'information qui permet 
+WWW: World Wide Web, est un système public d'information qui permet 
 de consulter des pages reliées par des liens hypertextes sur Internet.
 
 poll(): est une fonction "multiplexe", ce qui veut dire qu'il peut en un seul thread 

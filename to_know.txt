@@ -1,0 +1,9 @@
+malheureusement le projet nest pas maitrise, les notions ne sont pas expliquee. 
+soit les notions suivantes : 
+- norm RFC
+- telnet et son utilite
+- poll() 
+- time out CGI
+- NGINX globalement
+vous devez etre capable dexpliquer votre code globalement.
+bref, bon repush et bonne maitrise du projet pour la prochaine fois.

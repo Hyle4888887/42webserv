@@ -15,9 +15,10 @@ Telnet: ou "Terminal network" est un protocole utilise par tout
 les reseau TCP/IP (Transmission Control Procotcol/Internet Procotcol) cree en 1969
 et est normalise par IETF (Internet Enginering Task Force) grace 
 aux normes RFC 15 854 et 855.
+permet de tester GET POST DELETE.
 Utilisation:
 "sudo apt-get install telnet" (sous VM)
-telnet IP adress/host port(exmple: telnet 127.0.0.1 3000)
+telnet IP adress/host port(exmple: telnet localhost 3000)
 
 NGINX: cree en 2004, est un logiciel libre de serveur web et de proxy inverse
 elle utilise une architecture asynchrone et événementielle lui permettant de gérer 

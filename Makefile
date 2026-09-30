@@ -5,7 +5,6 @@ NAME = webserv
 CPP = c++
 FLAGS = -Wall -Wextra -Werror -std=c++98
 
-UPLOADS = uploads
 OBJ_DIR = objs
 
 SRC = main.cpp \
@@ -18,8 +17,6 @@ SRC = main.cpp \
 OBJ = $(addprefix $(OBJ_DIR)/, $(SRC:.cpp=.o))
 
 all: $(NAME)
-
-	mkdir -p $(UPLOADS)
 
 $(NAME): $(OBJ)
 	$(CPP) $(FLAGS) -o $(NAME) $(OBJ)

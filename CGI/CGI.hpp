@@ -42,6 +42,3 @@ class CGI
         static std::string buildResponse(const std::string &cgiOut);
         
 };
-
-//std::string executeCGI(const std::string &interpreter, const std::string &scriptPath, const std::string &method, const std::string &query, const std::string &body);
-//std::string buildCGIResponse(const std::string &cgiOut);

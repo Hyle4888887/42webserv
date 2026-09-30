@@ -8,13 +8,16 @@ The server also supports route-specific configuration, file uploads, redirects, 
 
 **Project structure:**
 
-- `parser/` — Config file parser: lexer and parser (`lexer.cpp`, `configParser.cpp`) plus the `serverConfig`/`locationConfig` structures.
-- `config/` — Server configuration files (`test.conf`, `conf_default`, `conf_template`).
-- `cgi-bin/` — Sample Python CGI scripts for testing (`echo.py`, `hello.py`, `redirect.py`, `notfound.py`, `lecture.py`).
+- `main.cpp` / `webserv.hpp` — Entry point and global header.
+- `Makefile` — Build rules (`all`, `clean`, `fclean`, `re`).
+- `server/` — Core server loop: socket setup (`socket.cpp`), `poll()` event loop (`poll.cpp`), client I/O handling (`handleOperation.cpp`), CGI dispatch (`handleCGI.cpp`), response assembly (`buildHTTP.cpp`) and connection timeouts (`checkTimeout.cpp`).
+- `HTTP/` — HTTP request parsing and handling (`HTTP.cpp`, `handle.cpp`), response generation (`build.cpp`, `response.cpp`) and shared request/response structures (`struct.hpp`).
+- `CGI/` — CGI execution: process startup with `fork`/`execve` (`start.cpp`), CGI class (`CGI.cpp`) and conversion of CGI output into an HTTP response (`buildResponse.cpp`).
+- `parser/` — Config file parser: lexer and tokens (`lexer.cpp`, `token.hpp`), parser (`configParser.cpp`) and the `serverConfig` / `locationConfig` structures.
+- `config/` — Configuration files: `conf_default`, `test.conf`, `multi.conf` (two sites on different ports) and `conf_template`.
 - `utils/` — Shared utility functions.
-- `errors/` — Default HTML error pages (404, 500).
 - `uploads/` — Destination folder for files uploaded through the server.
-- `www/` — Web root served by the server (`index.html`).
+- `www/` — Web root (`index.html`) and default error pages in `www/errors/` (400, 401, 403, 404, 429, 451, 500, 502, 503, 504).
 
 # Instructions
 
@@ -55,8 +58,10 @@ make re
 
 # Resources
 
-- RFC 7230, RFC 7231, and RFC 7232 for HTTP message formatting and semantics.
+- RFC 7230, RFC 7231, and RFC 7232 for HTTP message formatting and semantics creat by the IETF (Internet Engineering Task Force).
 - MDN Web Docs for practical HTTP request and response behavior.
+- cplusplus.com for many step of the project.
+- https://http.cat/ for cat error pages (505 doesn't exist).
 - NGINX configuration reference for server and location block structure.
 - Linux man pages for `socket`, `bind`, `listen`, `accept`, `poll`, `send`, `recv`, `fork`, `execve`, `pipe`, `dup2`, `waitpid`, `getaddrinfo`, `fcntl`, and file operations.
 

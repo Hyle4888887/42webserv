@@ -44,55 +44,64 @@ Request Server::parseRequest(const std::string &rawRequest) const
 	Request req;
 	req.path = "/";
 	req.version = "HTTP/1.1";
+	req.valid = false;
 
 	std::string::size_type lineEnd = rawRequest.find("\r\n");
-	if (lineEnd != std::string::npos)
+	if (lineEnd == std::string::npos)
+		return req;
+
+	std::string requestLine = rawRequest.substr(0, lineEnd);
+	std::istringstream firstLine(requestLine);
+	std::string target;
+	std::string extra;
+	if (!(firstLine >> req.method >> target >> req.version) || (firstLine >> extra))
+		return req;
+	if (target.empty() || req.version != "HTTP/1.1")
+		return req;
+
+	req.valid = true;
+	if (!target.empty())
 	{
-		std::string requestLine = rawRequest.substr(0, lineEnd);
-		std::istringstream firstLine(requestLine);
-		std::string target;
-		std::string extra;
-		if (!(firstLine >> req.method >> target >> req.version) || (firstLine >> extra))
-			return req;
-		if (target.empty() || (req.version != "HTTP/1.0" && req.version != "HTTP/1.1"))
-			return req;
-		req.valid = true;
-		if (!target.empty())
+		req.path = target;
+		std::string::size_type qPos = target.find('?');
+		if (qPos != std::string::npos)
 		{
-			req.path = target;
-			std::string::size_type qPos = target.find('?');
-			if (qPos != std::string::npos)
-			{
-				req.path = target.substr(0, qPos);
-				req.query = target.substr(qPos + 1);
-			}
-			req.path = collapseSlashes(req.path);
+			req.path = target.substr(0, qPos);
+			req.query = target.substr(qPos + 1);
 		}
+		req.path = collapseSlashes(req.path);
 	}
 
-	std::string::size_type headersStart = (lineEnd == std::string::npos) ? 0 : lineEnd + 2;
+	std::string::size_type headersStart = lineEnd + 2;
 	std::string::size_type headersEnd = rawRequest.find("\r\n\r\n");
-	if (headersEnd != std::string::npos && headersEnd >= headersStart)
+	if (headersEnd == std::string::npos || headersEnd < headersStart)
+		return req;
+
+	std::size_t cursor = headersStart;
+	while (cursor < headersEnd)
 	{
-		std::size_t cursor = headersStart;
-		while (cursor < headersEnd)
+		std::string::size_type next = rawRequest.find("\r\n", cursor);
+		if (next == std::string::npos || next > headersEnd)
+			break;
+		std::string line = rawRequest.substr(cursor, next - cursor);
+		std::string::size_type sep = line.find(':');
+		if (sep != std::string::npos)
 		{
-			std::string::size_type next = rawRequest.find("\r\n", cursor);
-			if (next == std::string::npos || next > headersEnd)
-				break;
-			std::string line = rawRequest.substr(cursor, next - cursor);
-			std::string::size_type sep = line.find(':');
-			if (sep != std::string::npos)
-			{
-				std::string key = toLowerCopy(trimCopy(line.substr(0, sep)));
-				std::string value = trimCopy(line.substr(sep + 1));
-				req.headers[key] = value;
-			}
-			cursor = next + 2;
+			std::string key = toLowerCopy(trimCopy(line.substr(0, sep)));
+			std::string value = trimCopy(line.substr(sep + 1));
+			req.headers[key] = value;
 		}
-		req.body = rawRequest.substr(headersEnd + 4);
+		cursor = next + 2;
 	}
 
+	std::map<std::string, std::string>::const_iterator hostIt = req.headers.find("host");
+	if (hostIt == req.headers.end() || trimCopy(hostIt->second).empty())
+	{
+		req.valid = false;
+		return req;
+	}
+
+	req.body = rawRequest.substr(headersEnd + 4);
 	return req;
 }
 

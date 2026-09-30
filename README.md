@@ -58,8 +58,10 @@ make re
 
 # Resources
 
-- RFC 7230, RFC 7231, and RFC 7232 for HTTP message formatting and semantics.
+- RFC 7230, RFC 7231, and RFC 7232 for HTTP message formatting and semantics creat by the IETF (Internet Engineering Task Force).
 - MDN Web Docs for practical HTTP request and response behavior.
+- cplusplus.com for many step of the project.
+- https://http.cat/ for cat error pages (505 doesn't exist).
 - NGINX configuration reference for server and location block structure.
 - Linux man pages for `socket`, `bind`, `listen`, `accept`, `poll`, `send`, `recv`, `fork`, `execve`, `pipe`, `dup2`, `waitpid`, `getaddrinfo`, `fcntl`, and file operations.
 

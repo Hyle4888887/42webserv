@@ -35,11 +35,17 @@ pollflags:
     -POLLHUP: Le correspondant a raccroché (Hang Up). La connexion est fermée du côté distant, utilisé pour les sockets ou les pipes.
     -POLLRHUP:La connexion a été fermée par le côté distant, ou le côté distant a fermé sa propre écriture (Read Hang Up). 
 Permet de détecter une fermeture partielle plus facilement qu'avec POLLHUP.
+    -POLLRDHUP: Est unique linux et permet lq fermeture d'un des lecteur, client ou serveur.
     -POLLERR: Une condition d'erreur s'est produite sur le descripteur de fichier.
     -POLLNVAL: Le descripteur de fichier n'est pas valide.
 
+socket flags:
+    -SO_REUSEADDR: permet de reutiliser une adresse local pour evité les erreur d'adresse deja utilisé.
+    -SOL_SOCKET: constante utilise dans l'API pour specifier le niveau de protocol.
+
 AI: Adress information
 
+FIFO: First In FIrst Out, qui veut dire premier arriver premier sortie, pour crée une file d'attente.
 
 RFC: ou "Request For Comments" est un document technique officiel numéroté qui décrit 
 et définit les protocoles, les normes, les architectures et les méthodes utilisés 

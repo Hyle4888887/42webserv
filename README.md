@@ -58,7 +58,7 @@ make re
 
 # Resources
 
-- RFC 7230, RFC 7231, and RFC 7232 for HTTP message formatting and semantics creat by the IETF (Internet Engineering Task Force).
+- RFC 3875 for CGI; RFC 7230, RFC 7231, and RFC 7232 for HTTP message formatting and semantics creat by the IETF (Internet Engineering Task Force).
 - MDN Web Docs for practical HTTP request and response behavior.
 - cplusplus.com for many step of the project.
 - https://http.cat/ for cat error pages (505 doesn't exist).

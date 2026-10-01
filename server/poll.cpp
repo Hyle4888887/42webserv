@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   poll.cpp                                           :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: mpoirier <mpoirier@student.42nice.fr>      +#+  +:+       +#+        */
+/*   By: bozil <bozil@student.42.fr>                +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/06/09 13:53:46 by mpoirier          #+#    #+#             */
-/*   Updated: 2026/06/09 13:56:46 by mpoirier         ###   ########.fr       */
+/*   Updated: 2026/10/01 10:42:36 by bozil            ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -24,6 +24,7 @@ void Server::setClientPollout(int clientFd)
         if (_pollFds[i].fd == clientFd) { _pollFds[i].events = POLLOUT; return; }
 }
 
+// delete useless things
 void Server::compactPollFds()
 {
     std::vector<struct pollfd> kept;

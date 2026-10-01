@@ -1,0 +1,96 @@
+RESUME DE MA PARTIE - SERVEUR HTTP WEBSERV
+
+1. Bases d'un serveur HTTP
+
+Un serveur HTTP attend des connexions TCP (Transmission Control Protocol)sur un port d'ecoute. 
+Lorsqu'un client se connecte, il envoie une requete composee notamment d'une methode (GET, POST, DELETE...), d'une URL, de headers et eventuellement d'un body.
+
+Le serveur doit :
+- accepter les nouvelles connexions ;
+- lire et parser les requetes ;
+- trouver la configuration et la location correspondant a l'URL ;
+- verifier la methode autorisee ;
+- servir un fichier statique, executer un CGI ou traiter un upload ;
+- construire une reponse HTTP avec un statut, des headers et un body ;
+- envoyer la reponse puis fermer ou conserver la connexion selon le comportement implemente.
+
+Dans ce projet, les sockets sont mises en mode non bloquant avec fcntl(fd, F_SETFL, O_NONBLOCK). 
+Cela permet au serveur de gerer plusieurs clients sans rester bloque sur un seul.
+
+2. Mecanisme d'evenements utilise
+
+Le projet utilise poll() comme mecanisme de multiplexage d'I/O. Les fonctions principales sont dans :
+- server/server.cpp : boucle principale et appel a poll() ;
+- server/socket.cpp : creation des sockets et ajout des listeners ;
+- server/handleOperation.cpp : accept(), recv(), send() et gestion des clients ;
+- server/handleCGI.cpp : lecture et ecriture dans les pipes CGI.
+
+3. Fonctionnement de poll()
+
+poll() recoit un tableau de structures pollfd. Chaque structure contient :
+- fd : le descripteur a surveiller ;
+- events : les evenements demandes, notamment POLLIN ou POLLOUT ;
+- revents : les evenements effectivement detectes par poll().
+
+La boucle appelle poll() avec un timeout de cinq secondes. Lorsque poll() retourne, le serveur parcourt les descripteurs et regarde revents :
+- un listener avec POLLIN est traite par accept() ;
+- un client avec POLLIN est traite par recv() ;
+- un client avec POLLOUT est traite par send() ;
+- un pipe CGI avec POLLIN est lu ;
+- un pipe CGI avec POLLOUT recoit les donnees du body de la requete.
+
+Les descripteurs sont ensuite compactes lorsqu'ils sont marques a -1.
+
+4. Un seul poll() et gestion des I/O
+
+Le serveur utilise une seule instance de poll() dans la boucle principale de Server::run(). 
+Tous les descripteurs event-driven sont ajoutes au meme tableau _pollFds :
+- les sockets d'ecoute ;
+- les sockets clients ;
+- les pipes d'entree et de sortie des CGI.
+
+Le chemin principal est :
+1. poll() attend un evenement ;
+2. Server::run() examine revents ;
+3. le descripteur est identifie comme listener, client ou pipe CGI ;
+4. la fonction correspondante est appelee ;
+5. l'I/O est effectuee uniquement si le descripteur a indique l'evenement attendu.
+
+Les clients sont inscrits avec POLLIN lorsqu'une requete est attendue, puis avec POLLOUT lorsqu'une reponse est prete. 
+Les pipes CGI sont aussi inscrits dans _pollFds et ne sont pas traites en dehors de la boucle poll().
+
+5. Verification des erreurs et retours d'I/O
+
+Sockets :
+- accept() est appele uniquement pour un listener signale par POLLIN. En cas d'echec, la connexion n'est pas ajoutee ;
+- recv() est appele pour un client signale par POLLIN. Si recv() retourne 0 ou une valeur negative, closeClient() supprime le client ;
+- send() est appele pour un client signale par POLLOUT. Si send() retourne 0 ou une valeur negative, closeClient() supprime le client ;
+- les envois partiels sont geres avec outBufferOffset.
+
+Pipes CGI :
+- read() est appele apres un evenement POLLIN ;
+- write() est appele apres un evenement POLLOUT ;
+- les donnees partielles sont gerees avec CGIInputOffset ;
+- la fin du pipe est detectee lorsque read() ne renvoie plus de donnees, puis la reponse CGI est finalisee.
+
+Fichiers reguliers :
+- les fichiers statiques sont lus avec read() dans handleWrite() ;
+- les uploads sont ecrits avec write() dans HTTP/handle.cpp ;
+- ces operations concernent des fichiers disque reguliers et sont donc exemptees de la contrainte poll(). 
+Elles restent synchrones, mais les petits fichiers servis ne doivent pas bloquer durablement la boucle evenementielle.
+
+Le code ne doit pas utiliser errno pour decider du flux apres read(), recv(), write() ou send(). 
+errno peut uniquement etre affiche ou journalise. 
+Pour les descripteurs non bloquants, une evolution possible serait de traiter explicitement 
+EAGAIN/EWOULDBLOCK comme un retour temporaire vers la boucle principale, 
+au lieu de le confondre avec une fermeture ou une erreur definitive.
+
+6. Points a montrer pendant l'evaluation
+
+- server/server.cpp : appel unique a poll() dans Server::run() ;
+- server/handleOperation.cpp : branchement entre poll(), accept(), recv() et send() ;
+- server/handleCGI.cpp : branchement entre poll() et les pipes CGI ;
+- server/socket.cpp : creation des sockets non bloquants ;
+- HTTP/handle.cpp : I/O sur fichiers reguliers pour les uploads.
+
+Conclusion : le serveur repose sur une boucle evenementielle unique utilisant poll(). Les sockets et les pipes CGI sont surveilles par cette boucle, tandis que les fichiers reguliers sont traites directement. Les erreurs sur les sockets entrainent la suppression du client et les envois partiels sont suivis par des offsets.

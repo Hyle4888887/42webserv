@@ -56,7 +56,7 @@ std::string CGI::buildResponse(const std::string &cgiOut, std::string &localRedi
     } if (location.empty() && !hasContentType) return BAD_GATEWAY_ERROR_502;
     if (!location.empty() && !hasStatus) status = "302 Found";
     std::ostringstream response;
-    response << "HTTP/1.1" << status << "\r\n" << forwarded
+    response << "HTTP/1.1 " << status << "\r\n" << forwarded
             << "Content-Lenght: " << cgiBody.size() << "\r\n"
             << "Connection: close \r\n\r\n" << cgiBody;
     return response.str();

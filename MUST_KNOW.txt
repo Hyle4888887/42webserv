@@ -59,6 +59,21 @@ permet de tester GET POST DELETE.
 Utilisation:
 "sudo apt-get install telnet" (sous VM)
 telnet IP adress/host port(exmple: telnet localhost 3000)
+"GET / HTTP/1.1
+Host: localhost"
+"POST /uploads/test.txt HTTP/1.1
+Host: localhost"
+Content-Type: text/plain
+Content-length: 11
+Hello World"
+"DELETE /uploads/test.txt HTTP/1.1
+Host: localhost"
+
+Curl: permet de transférer des données vers ou depuis un serveur en utilisant une simple URL.
+Utilisation:
+"curl -X GET http://localhost:8080"
+"curl -X POST -H "Content-Type: text/plain" --data "Hello World" http://localhost:8080/uploads/test.txt"
+"curl -X DELETE http://localhost:8080/uploads/test.txt"
 
 NGINX: cree en 2004, est un logiciel libre de serveur web et de proxy inverse
 elle utilise une architecture asynchrone et événementielle lui permettant de gérer 

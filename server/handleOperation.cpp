@@ -1,5 +1,11 @@
 #include "server.hpp"
 
+static std::string ipToString(in_addr_t netAddr) {
+	unsigned long ip = ntohl(netAddr);
+	return toString((ip >> 24) & 0xFF) + "." + toString((ip >> 16) & 0xFF) + "."
+		+ toString((ip >> 8) && 0xFF) + "." + toString(ip & 0xFF);
+}
+
 // content-lenght is -> 0: absent, 1: valid, -1: invalid or duplicate 
 static int getContentLength(const std::string &headersBlock, std::size_t &lenght)
 {
@@ -66,8 +72,9 @@ const LocationConfig *Server::matchLocation(const std::string &path, const Serve
 	return best;
 }
 
-std::string Server::resolvePath(const std::string &urlPath, const LocationConfig &location) const
+std::string Server::resolvePath(const std::string &rawPath, const LocationConfig &location) const
 {
+	std::string urlPath = decodeUrlPath(rawPath);
 	std::string::size_type pos = 0;
 	while ((pos = urlPath.find("..", pos)) != std::string::npos)
 	{
@@ -88,24 +95,32 @@ std::string Server::resolvePath(const std::string &urlPath, const LocationConfig
 	return fs;
 }
 
-bool Server::findCgiTarget(const Request &req, const ServerConfig &config, std::string &interpreter, std::string &scriptPath) const
-{
-	const LocationConfig *location = matchLocation(req.path, config);
-	if (!location)
-		return false;
-
-	std::string::size_type dot = req.path.rfind('.');
-	if (dot == std::string::npos)
-		return false;
-
-	std::string extension = req.path.substr(dot);
-	std::map<std::string, std::string>::const_iterator it = location->cgi.find(extension);
-	if (it == location->cgi.end())
-		return false;
-
-	interpreter = it->second;
-	scriptPath = resolvePath(req.path, *location);
-	return !scriptPath.empty();
+void Server::dispatchRequest(int fd, const Request &req) {
+    Client &client = _clients[fd];
+    const ServerConfig *cfg = selectServerConfig(client.listenFd, req);
+    const LocationConfig *loc = cfg ? matchLocation(req.path, *cfg) : NULL;
+    std::string interpreter, scriptName, pathInfo;
+    if (cfg && loc && methodAllowed(req, *loc) && findCgiTarget(req, *cfg, interpreter, scriptName, pathInfo)) {
+        CGI cgi(req); cgi.interpreter = interpreter;
+        cgi.scriptName = scriptName; cgi.scriptPath = resolvePath(scriptName, *loc);
+        if (cgi.scriptPath == loc->root)
+            cgi.scriptPath = joinPath(loc->root, scriptName.substr(scriptName.find_last_of('/') + 1));
+        if (access(interpreter.c_str(), X_OK) != 0 || access(cgi.scriptPath.c_str(), F_OK) != 0) {
+            client.outBuffer = NOT_FOUND_ERROR_404;
+            client.responseReady = true; setClientsEvents(fd, POLLOUT | POLLRDHUP);
+            return ;
+        } cgi.pathInfo = decodeUrlPath(pathInfo);
+        cgi.pathTranslated = cgi.pathInfo.empty() ? std::string() : joinPath(loc->root, cgi.pathInfo);
+        cgi.serverName = cgiServerName(req, *cfg, client.listenFd);
+        cgi.serverPort = toString(static_cast<unsigned long>(_listenerPorts[client.listenFd]));
+        cgi.remoteAddr = client.remoteAddr; cgi.remotePort = client.remotePort;
+        client.cgiRequest = req; client.cgiRequest.body.clear();
+        startCGI(fd, cgi);
+        if (client.CGIActive) setClientsEvents(fd, 0);
+        return;
+    } buildResponse(client, req);
+    client.responseReady = true;
+    setClientsEvents(fd, POLLOUT | POLLRDHUP);
 }
 
 // Handle new incoming client connections.
@@ -113,7 +128,8 @@ void	Server::handleNewConnection(int listenFd)
 {
 	while (true)
 	{
-		int	clientFd = accept(listenFd, NULL, NULL);
+		struct sockaddr_in addr; socklen_t len = sizeof(addr);
+		int clientFd = accept(listenFd, reinterpret_cast<struct sockaddr *>(&addr), &len);
 		if (clientFd < 0)
 			break;
 
@@ -123,15 +139,13 @@ void	Server::handleNewConnection(int listenFd)
 			continue;
 		}
 
-		struct pollfd	pfd;
-		pfd.fd      = clientFd;
-		pfd.events  = POLLIN;
-		pfd.events |= POLLRDHUP;
+		struct pollfd	pfd; pfd.fd = clientFd;
+		pfd.events  = POLLIN; pfd.events |= POLLRDHUP;
 		pfd.revents = 0;
 		_pollFds.push_back(pfd);
-		_clients[clientFd] = Client();
-		_clients[clientFd].listenFd = listenFd;
-
+		_clients[clientFd] = Client(); _clients[clientFd].listenFd = listenFd;
+		_clients[clientFd].remoteAddr = ipToString(addr.sin_addr.s_addr);
+		_clients[clientFd].remotePort = toString(ntohs(addr.sin_port));
 		std::cout << "[+] Client connecte fd=" << clientFd << std::endl;
 	}
 }
@@ -195,6 +209,7 @@ void	Server::handleWrite(std::size_t index)
 		closeClient(index);
 	}
 }
+
 // Read incoming client data and process it once a full request has arrived.
 void	Server::handleRead(std::size_t index)
 {
@@ -235,7 +250,7 @@ void	Server::handleRead(std::size_t index)
 		&& lowerHeaders.find("chunked") != std::string::npos;
 	if (contentLengthStatus == -1 || (hasContentLength && chunked))
 	{
-		client.outBuffer = "HTTP/1.1 400 Bad Request\r\nContent-Type: text/html\r\nContent-Length: 0\r\nConnection: close\r\n\r\n";
+		client.outBuffer = BAD_REQUEST_ERROR_400;
 		client.responseReady = true;
 		_pollFds[index].events = POLLOUT | POLLRDHUP;
 		return;
@@ -269,9 +284,8 @@ void	Server::handleRead(std::size_t index)
 		Request headerRequest = parseRequest(client.inBuffer.substr(0, headersEnd + 4));
 		const ServerConfig *headerConfig = selectServerConfig(client.listenFd, headerRequest);
 		const LocationConfig *headerLocation = headerConfig == NULL ? NULL : matchLocation(headerRequest.path, *headerConfig);
-		std::string headerInterpreter;
-		std::string headerScript;
-		bool headerIsCgi = headerConfig != NULL && findCgiTarget(headerRequest, *headerConfig, headerInterpreter, headerScript);
+		std::string headerInterpreter, headerScript, headerPathInfo;
+		bool headerIsCgi = headerConfig != NULL && findCgiTarget(headerRequest, *headerConfig, headerInterpreter, headerScript, headerPathInfo);
 		bool headerMethodAllowed = headerLocation != NULL && methodAllowed(headerRequest, *headerLocation);
 		if (!headerIsCgi && !headerMethodAllowed)
 		{
@@ -334,7 +348,7 @@ void	Server::handleRead(std::size_t index)
 			if (bodyLimitKnown && (client.requestBody.size() > maxBodySize
 				|| take > maxBodySize - client.requestBody.size()))
 			{
-				client.outBuffer = "HTTP/1.1 413 Payload Too Large\r\nContent-Type: text/html\r\nContent-Length: 0\r\nConnection: close\r\n\r\n";
+				client.outBuffer = PAYLOAD_TOO_LARGE_ERROR_413;
 				client.responseReady = true;
 				_pollFds[index].events = POLLOUT;
 				_pollFds[index].events |= POLLRDHUP;
@@ -358,7 +372,7 @@ void	Server::handleRead(std::size_t index)
 			contentLengthLimit = headersLocation->clientMaxBodySize;
 		if (headersConfig != NULL && contentLength > contentLengthLimit)
 		{
-			client.outBuffer = "HTTP/1.1 413 Payload Too Large\r\nContent-Type: text/html\r\nContent-Length: 0\r\nConnection: close\r\n\r\n";
+			client.outBuffer = PAYLOAD_TOO_LARGE_ERROR_413;
 			client.responseReady = true;
 			_pollFds[index].events = POLLOUT;
 			_pollFds[index].events |= POLLRDHUP;
@@ -391,42 +405,5 @@ void	Server::handleRead(std::size_t index)
 			req.body.erase(contentLength);
 		}
 	}
-
-	std::string interpreter;
-	std::string scriptPath;
-	const ServerConfig *serverConfig = selectServerConfig(client.listenFd, req);
-	const LocationConfig *location = serverConfig == NULL ? NULL : matchLocation(req.path, *serverConfig);
-	bool CGI = (serverConfig != NULL && location != NULL && methodAllowed(req, *location)
-		&& findCgiTarget(req, *serverConfig, interpreter, scriptPath));
-	if (CGI && scriptPath == location->root)
-		scriptPath = joinPath(location->root, req.path.substr(req.path.find_last_of('/') + 1));
-
-	if (CGI)
-	{
-		if (access(interpreter.c_str(), X_OK) != 0 || access(scriptPath.c_str(), F_OK) != 0)
-		{
-			client.outBuffer = "HTTP/1.1 404 Not Found\r\nContent-Type: text/html\r\nContent-Length: 0\r\nConnection: close\r\n\r\n";
-			client.responseReady = true;
-			_pollFds[index].events = POLLOUT;
-			_pollFds[index].events |= POLLRDHUP;
-		}
-		else
-		{
-			std::string requestUri = req.path;
-			if (!req.query.empty())
-				requestUri += "?" + req.query;
-			startCGI(fd, interpreter, scriptPath, req.method, req.query, requestUri, req.body,
-				req.headers, serverConfig->serverName,
-				toString(static_cast<unsigned long>(_listenerPorts[client.listenFd])));
-			if (client.CGIActive)
-				_pollFds[index].events = 0;
-		}
-	}
-	else
-	{
-		buildResponse(client, req);
-		client.responseReady = true;
-		_pollFds[index].events = POLLOUT;
-		_pollFds[index].events |= POLLRDHUP;
-	}
+	dispatchRequest(fd, req);
 }

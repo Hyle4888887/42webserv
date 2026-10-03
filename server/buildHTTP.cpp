@@ -160,7 +160,7 @@ void	Server::buildResponse(Client &client, const Request &req)
 	const ServerConfig *serverConfig = selectServerConfig(client.listenFd, req);
 	if (serverConfig == NULL)
 	{
-		client.outBuffer = "HTTP/1.1 500 Internal Server Error\r\nContent-Type: text/plain\r\nContent-Length: 0\r\nConnection: close\r\n\r\n";
+		client.outBuffer = INTERNAL_SERVER_ERROR_500;
 		return;
 	}
 	if (req.method == "GET" && Response::prepareDownload(req, *serverConfig,

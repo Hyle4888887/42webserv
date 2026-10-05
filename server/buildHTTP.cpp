@@ -2,6 +2,14 @@
 
 #include <cctype>
 
+static bool isHTTPformat(const std::string &v)
+{
+	return v.size() == 8 && v.compare(0, 5, "HTTP/") == 0 
+	&& std::isdigit(static_cast<unsigned char>(v[5])) 
+	&& v[6] == '.' 
+	&& std::isdigit(static_cast<unsigned char>(v[7]));
+}
+
 static std::string toLowerCopy(const std::string &s)
 {
 	std::string out = s;
@@ -56,8 +64,15 @@ Request Server::parseRequest(const std::string &rawRequest) const
 	std::string extra;
 	if (!(firstLine >> req.method >> target >> req.version) || (firstLine >> extra))
 		return req;
-	if (target.empty() || req.version != "HTTP/1.1")
+	if (target.empty() || !isHTTPformat(req.version))
+	{
 		return req;
+	}
+	if (req.version != "HTTP/1.1")
+	{
+		req.errorCode = 505;
+		return req;
+	}
 
 	req.valid = true;
 	if (!target.empty())

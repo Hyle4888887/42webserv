@@ -17,6 +17,11 @@ le processus, mais ce dernier peut l'intercepter pour nettoyer des fichiers temp
 Contrairement à SIGKILL (9), SIGTERM est une demande de fermeture polie : le processus peut l'intercepter 
 pour sauvegarder son état, fermer ses connexions et s'éteindre proprement.
 
+fd: Le noyau de l'OS maintient une table pour chaque programme. 
+Chaque ressource ouverte reçoit un petit entier positif 
+(0 pour l'entrée standard, 1 pour la sortie standard, 2 pour l'erreur standard, puis 3, 4, etc. pour vos fichiers).
+Ce pourquoi le programme avec fd 4.
+
 fcntl: permet de manipuler un descripteur de fichier ouvert pour modifier ses indicateurs de statut ou gérer des verrous.
 L'utilisation conjointe de F_SETFL et O_NONBLOCK avec la fonction fcntl permet de configurer 
 un descripteur de fichier ou un socket en mode non bloquant.

@@ -3,7 +3,7 @@
 static std::string ipToString(in_addr_t netAddr) {
 	unsigned long ip = ntohl(netAddr);
 	return toString((ip >> 24) & 0xFF) + "." + toString((ip >> 16) & 0xFF) + "."
-		+ toString((ip >> 8) && 0xFF) + "." + toString(ip & 0xFF);
+		+ toString((ip >> 8) & 0xFF) + "." + toString(ip & 0xFF);
 }
 
 // content-lenght is -> 0: absent, 1: valid, -1: invalid or duplicate 

@@ -63,7 +63,7 @@ std::string Response::buildDirectoryListing(const std::string &urlPath, const st
 std::string Response::build(const Request &req, const ServerConfig &config)
 {
     if (!req.valid)
-        return errorResponse(400, config);
+        return errorResponse(req.errorCode, config);
 
     const LocationConfig *location = matchLocation(req.path, config);
     if (!location)

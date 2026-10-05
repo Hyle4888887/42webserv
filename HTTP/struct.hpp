@@ -14,6 +14,7 @@ struct Request
     std::string body;
     std::map<std::string, std::string> headers;
     bool valid;
+    int errorCode;
 
-    Request() : valid(false) {}
+    Request() : valid(false), errorCode(400) {}
 };

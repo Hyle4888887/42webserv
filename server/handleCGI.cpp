@@ -6,7 +6,7 @@ void Server::startCGI(int clientFd, CGI &cgi)
 {
     Client &client = _clients[clientFd];
     if (!cgi.start()) {
-        client.outBuffer = INTERNAL_SERVER_ERROR_500;
+        client.outBuffer = errorFor(500, client.listenFd, client.cgiRequest);
         client.responseReady = true;
         setClientPollout(clientFd);
         return; }
@@ -61,7 +61,7 @@ void Server::handleCGIError(std::size_t index)
         client.CGIFdIn = -1;
     }
     client.CGIActive = false;
-    client.outBuffer = BAD_GATEWAY_ERROR_502;
+    client.outBuffer = errorFor(502, client.listenFd, client.cgiRequest);
     client.responseReady = true;
     setClientPollout(clientFd);
 }
@@ -98,8 +98,9 @@ void Server::finishCGI(int clientFd)
     c.CGIOutput.clear();
     if (!target.empty()) {
         if (++c.CGIRedirects <= 5) {internalRedirect(clientFd, target); return; }
-        resp = INTERNAL_SERVER_ERROR_500;
-    } c.outBuffer = resp; c.responseReady = true;
+        resp = errorFor(500, c.listenFd, c.cgiRequest);
+    } else if (resp.empty()) resp = errorFor(502, c.listenFd, c.cgiRequest);
+    c.outBuffer = resp; c.responseReady = true;
     setClientPollout(clientFd);
 }
 void Server::internalRedirect(int clientFd, const std::string &target) {

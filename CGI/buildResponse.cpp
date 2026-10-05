@@ -23,7 +23,7 @@ std::string CGI::buildResponse(const std::string &cgiOut, std::string &localRedi
     localRedirect.clear();
     std::string::size_type a = cgiOut.find("\r\n\r\n"), b = cgiOut.find("\n\n"), sep;
     std::size_t sepLen;
-    if (a == std::string::npos && b == std::string::npos) return BAD_GATEWAY_ERROR_502;
+    if (a == std::string::npos && b == std::string::npos) return "";
     if (b != std::string::npos && (a == std::string::npos || b < a)) { sep = b; sepLen = 2; }
     else {sep = a; sepLen = 4; }
     std::string headerBlock = cgiOut.substr(0, sep);
@@ -35,13 +35,13 @@ std::string CGI::buildResponse(const std::string &cgiOut, std::string &localRedi
         if (!line.empty() && lastC(line) == '\r') line.erase(line.size() - 1);
         if (line.empty()) continue;
         std::string::size_type colon = line.find(':');
-        if (colon == std::string::npos || colon == 0) return BAD_GATEWAY_ERROR_502;
+        if (colon == std::string::npos || colon == 0) return "";
         std::string name = line.substr(0, colon), value = line.substr(colon + 1);
         std::string::size_type vs = value.find_first_not_of(" \t");
         value = (vs == std::string::npos) ? "" : value.substr(vs);
         std::string lower = toLower(name);
         if (lower == "status") {
-            if (!validStatus(value)) return BAD_GATEWAY_ERROR_502;
+            if (!validStatus(value)) return "";
             status = (value.size() == 3) ? value + " " : value;
             hasStatus = true;
         } else if (lower == "content-lenght" || lower == "connection" || lower == "transfer-encoding")
@@ -53,7 +53,7 @@ std::string CGI::buildResponse(const std::string &cgiOut, std::string &localRedi
         }
     } if (!location.empty() && location[0] == '/' && !hasStatus) {
         localRedirect = location; return "";
-    } if (location.empty() && !hasContentType) return BAD_GATEWAY_ERROR_502;
+    } if (location.empty() && !hasContentType) return "";
     if (!location.empty() && !hasStatus) status = "302 Found";
     std::ostringstream response;
     response << "HTTP/1.1 " << status << "\r\n" << forwarded

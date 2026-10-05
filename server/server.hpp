@@ -6,7 +6,7 @@
 /*   By: mpoirier <mpoirier@student.42nice.fr>      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/06/02 12:52:06 by bozil             #+#    #+#             */
-/*   Updated: 2026/10/03 11:02:14 by mpoirier         ###   ########.fr       */
+/*   Updated: 2026/10/05 11:18:59 by mpoirier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -55,7 +55,6 @@ class Server
 	~Server();
 	bool addListener(const std::string &host, int port);
 	void run();
-
   private:
 	Server(const Server &other);
 	struct	Client
@@ -135,4 +134,5 @@ class Server
 	void dispatchRequest(int fd, const Request &req);
 	void internalRedirect(int clientFd, const std::string &target);
 	void setClientsEvents(int clientFd, short events);
+	std::string errorFor(int code, int listenFd, const Request &req) const;
 };

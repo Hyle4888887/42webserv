@@ -148,6 +148,13 @@ const ServerConfig *Server::selectServerConfig(int listenFd, const Request &req)
 	return &_config.servers[0];
 }
 
+std::string Server::errorFor(int code, int listenFd, const Request &req) const
+{
+	const ServerConfig *cfg = selectServerConfig(listenFd, req);
+	if (cfg) return Response::errorResponse(code, *cfg);
+	ServerConfig none; return Response::errorResponse(code, none);
+}
+
 // Build an HTTP response from the parsed request.
 void	Server::buildResponse(Client &client, const std::string &rawRequest)
 {
@@ -160,7 +167,8 @@ void	Server::buildResponse(Client &client, const Request &req)
 	const ServerConfig *serverConfig = selectServerConfig(client.listenFd, req);
 	if (serverConfig == NULL)
 	{
-		client.outBuffer = INTERNAL_SERVER_ERROR_500;
+		ServerConfig none;
+		client.outBuffer = Response::errorResponse(500, none);
 		return;
 	}
 	if (req.method == "GET" && Response::prepareDownload(req, *serverConfig,

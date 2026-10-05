@@ -26,7 +26,7 @@ class Response
     static bool prepareDownload(const Request &req, const ServerConfig &config,
                                 int &fileFd, unsigned long long &fileSize,
                                 std::string &headers);
-
+    static std::string        errorResponse(int code, const ServerConfig &config);
   private:
     Response();
     
@@ -44,7 +44,6 @@ class Response
     static std::string        makeResponse(int code, const std::string &mime, const std::string &body,
                          const std::string &contentDisposition = "");
     static std::string        makeRedirect(int code, const std::string &location);
-    static std::string        errorResponse(int code, const ServerConfig &config);
     static std::string        statusText(int code);
 };
 

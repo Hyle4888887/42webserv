@@ -106,7 +106,7 @@ void Server::dispatchRequest(int fd, const Request &req) {
         if (cgi.scriptPath == loc->root)
             cgi.scriptPath = joinPath(loc->root, scriptName.substr(scriptName.find_last_of('/') + 1));
         if (access(interpreter.c_str(), X_OK) != 0 || access(cgi.scriptPath.c_str(), F_OK) != 0) {
-            client.outBuffer = NOT_FOUND_ERROR_404;
+            client.outBuffer = Response::errorResponse(404, *cfg);
             client.responseReady = true; setClientsEvents(fd, POLLOUT | POLLRDHUP);
             return ;
         } cgi.pathInfo = decodeUrlPath(pathInfo);
@@ -250,7 +250,7 @@ void	Server::handleRead(std::size_t index)
 		&& lowerHeaders.find("chunked") != std::string::npos;
 	if (contentLengthStatus == -1 || (hasContentLength && chunked))
 	{
-		client.outBuffer = BAD_REQUEST_ERROR_400;
+		client.outBuffer = errorFor(400, client.listenFd, parseRequest(client.inBuffer.substr(0, headersEnd + 4)));
 		client.responseReady = true;
 		_pollFds[index].events = POLLOUT | POLLRDHUP;
 		return;
@@ -348,7 +348,7 @@ void	Server::handleRead(std::size_t index)
 			if (bodyLimitKnown && (client.requestBody.size() > maxBodySize
 				|| take > maxBodySize - client.requestBody.size()))
 			{
-				client.outBuffer = PAYLOAD_TOO_LARGE_ERROR_413;
+				client.outBuffer = errorFor(413, client.listenFd, limitRequest);
 				client.responseReady = true;
 				_pollFds[index].events = POLLOUT;
 				_pollFds[index].events |= POLLRDHUP;
@@ -372,7 +372,7 @@ void	Server::handleRead(std::size_t index)
 			contentLengthLimit = headersLocation->clientMaxBodySize;
 		if (headersConfig != NULL && contentLength > contentLengthLimit)
 		{
-			client.outBuffer = PAYLOAD_TOO_LARGE_ERROR_413;
+			client.outBuffer = errorFor(413, client.listenFd, headersRequest);
 			client.responseReady = true;
 			_pollFds[index].events = POLLOUT;
 			_pollFds[index].events |= POLLRDHUP;

@@ -1,17 +1,6 @@
-/* ************************************************************************** */
-/*                                                                            */
-/*                                                        :::      ::::::::   */
-/*   htmlBody.cpp                                       :+:      :+:    :+:   */
-/*                                                    +:+ +:+         +:+     */
-/*   By: mpoirier <mpoirier@student.42nice.fr>      +#+  +:+       +#+        */
-/*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2026/06/11 15:13:21 by mpoirier          #+#    #+#             */
-/*   Updated: 2026/06/11 15:14:47 by mpoirier         ###   ########.fr       */
-/*                                                                            */
-/* ************************************************************************** */
-
 #include "HTTP.hpp"
 
+// Generate the HTML body shown for an HTTP error page.
 std::string errorBody(const std::string code, const std::string status)
 {
     std::string res;

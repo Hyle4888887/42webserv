@@ -2,6 +2,7 @@
 
 #include <cctype>
 
+// Convert a string to lowercase for case-insensitive header handling.
 static std::string toLowerCopy(const std::string &s)
 {
     std::string out = s;
@@ -10,6 +11,7 @@ static std::string toLowerCopy(const std::string &s)
     return out;
 }
 
+// Remove leading and trailing whitespace from a value.
 static std::string trimCopy(const std::string &s)
 {
     std::string::size_type begin = 0;
@@ -23,6 +25,7 @@ static std::string trimCopy(const std::string &s)
     return s.substr(begin, end - begin);
 }
 
+// Remove surrounding quotes from a string value.
 static std::string stripQuotes(const std::string &s)
 {
     if (s.size() >= 2 && ((s[0] == '"' && s[s.size() - 1] == '"') || (s[0] == '\'' && s[s.size() - 1] == '\'')))
@@ -30,6 +33,7 @@ static std::string stripQuotes(const std::string &s)
     return s;
 }
 
+// Extract the last path segment from a filesystem path.
 static std::string baseName(const std::string &path)
 {
     std::string::size_type slash = path.find_last_of("/\\");
@@ -38,6 +42,7 @@ static std::string baseName(const std::string &path)
     return path.substr(slash + 1);
 }
 
+// Fetch a header value by name without changing the map.
 static std::string getHeaderValue(const Request &req, const std::string &name)
 {
     std::map<std::string, std::string>::const_iterator it = req.headers.find(name);
@@ -46,6 +51,7 @@ static std::string getHeaderValue(const Request &req, const std::string &name)
     return it->second;
 }
 
+// Extract a multipart upload payload and filename from a form body.
 static bool extractMultipartUpload(const Request &req, std::string &filename,
                                    std::size_t &contentStart, std::size_t &contentEnd)
 {
@@ -132,7 +138,7 @@ static bool extractMultipartUpload(const Request &req, std::string &filename,
     return true;
 }
 
-// Handle a GET request using the matched location.
+// Serve a GET request from the file system or directory listing.
 std::string Response::handleGET(const Request &req, const LocationConfig &location, const ServerConfig &config)
 {
     std::string path = resolvePath(req.path, location);
@@ -158,7 +164,7 @@ std::string Response::handleGET(const Request &req, const LocationConfig &locati
     return makeResponse(200, getMime(path), body, disposition);
 }
 
-// Handle a POST request and store the uploaded body.
+// Store a POST body or uploaded file in the configured location.
 std::string Response::handlePOST(const Request &req, const LocationConfig &location, const ServerConfig &config)
 {
     std::size_t maxBodySize = location.hasClientMaxBodySize ? location.clientMaxBodySize : config.clientMaxBodySize;
@@ -201,13 +207,13 @@ std::string Response::handlePOST(const Request &req, const LocationConfig &locat
     return makeResponse(201, "text/plain", "Created");
 }
 
-// Handle a DELETE request by removing a file from the upload directory.
+// Remove a file from an upload directory for a request.
 std::string Response::handleDELETE(const Request &req, const LocationConfig &location, const ServerConfig &config)
 {
     if (!location.uploadEnabled || location.uploadDir.empty())
         return errorResponse(403, config);
 
-    std::string name = baseName(req.path);
+    std::string name = decodeUrlPath(baseName(req.path));
     if (name.empty() || name == "." || name == "..")
         return errorResponse(403, config);
 

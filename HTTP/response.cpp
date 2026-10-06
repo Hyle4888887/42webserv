@@ -1,5 +1,6 @@
 #include "HTTP.hpp"
 
+// Return the standard HTTP reason phrase for a status code.
 std::string Response::statusText(int code)
 {
     switch (code)
@@ -30,6 +31,7 @@ std::string Response::statusText(int code)
     }
 }
 
+// Build a standard HTTP response with headers and a body.
 std::string Response::makeResponse(int code, const std::string &mime, const std::string &body,
                                    const std::string &contentDisposition)
 {
@@ -45,6 +47,7 @@ std::string Response::makeResponse(int code, const std::string &mime, const std:
     return r;
 }
 
+// Build a redirect response pointing to a new URL.
 std::string Response::makeRedirect(int code, const std::string &location)
 {
     std::string r;

@@ -1,6 +1,7 @@
 
 #include "server.hpp"
 
+// Kill CGI processes that exceed the allowed execution time.
 void Server::checkCGITimeouts()
 {
     time_t now = std::time(NULL);

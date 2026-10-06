@@ -1,14 +1,17 @@
 
 #include "server.hpp"
 
+// Create an empty server instance.
 Server::Server()
 {
 }
 
+// Build a server instance from the parsed configuration.
 Server::Server(const Config &config) : _config(config)
 {
 }
 
+// Clean up active CGI processes and client sockets on shutdown.
 Server::~Server()
 {
 	for (std::map<int, Client>::iterator it = _clients.begin(); it != _clients.end(); ++it)
@@ -32,7 +35,7 @@ Server::~Server()
 			close(_listenFds[i]);
 }
 
-// Run the main server loop.
+// Run the main polling loop to accept and process traffic.
 void Server::run()
 {
 	if (_pollFds.empty())
@@ -93,7 +96,7 @@ void Server::run()
 	}
 }
 
-// Close and remove a client connection.
+// Close and remove a client connection from the server state.
 void	Server::closeClient(std::size_t index)
 {
 	int	fd = _pollFds[index].fd;

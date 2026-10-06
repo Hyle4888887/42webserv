@@ -1,12 +1,13 @@
 #include "server.hpp"
 
+// Convert a network IP address to a dotted decimal string.
 static std::string ipToString(in_addr_t netAddr) {
 	unsigned long ip = ntohl(netAddr);
 	return toString((ip >> 24) & 0xFF) + "." + toString((ip >> 16) & 0xFF) + "."
 		+ toString((ip >> 8) & 0xFF) + "." + toString(ip & 0xFF);
 }
 
-// content-lenght is -> 0: absent, 1: valid, -1: invalid or duplicate 
+// Parse the Content-Length header and validate its value.
 static int getContentLength(const std::string &headersBlock, std::size_t &lenght)
 {
 	std::string lower = headersBlock;
@@ -29,6 +30,7 @@ static int getContentLength(const std::string &headersBlock, std::size_t &lenght
 	return iss.fail() ? -1 : 1;
 }
 
+// Join two path fragments without creating duplicate separators.
 static std::string joinPath(const std::string &base, const std::string &suffix)
 {
 	if (base.empty())
@@ -42,6 +44,7 @@ static std::string joinPath(const std::string &base, const std::string &suffix)
 	return base + suffix;
 }
 
+// Check whether the request method is permitted by the matched location.
 static bool methodAllowed(const Request &req, const LocationConfig &location)
 {
 	const std::string &method = req.method;
@@ -51,6 +54,7 @@ static bool methodAllowed(const Request &req, const LocationConfig &location)
 	return location.allowedMethods.empty();
 }
 
+// Select the most specific location matching the request path.
 const LocationConfig *Server::matchLocation(const std::string &path, const ServerConfig &config) const
 {
 	const LocationConfig *best = NULL;
@@ -72,6 +76,7 @@ const LocationConfig *Server::matchLocation(const std::string &path, const Serve
 	return best;
 }
 
+// Resolve a URL path safely against the location root.
 std::string Server::resolvePath(const std::string &rawPath, const LocationConfig &location) const
 {
 	std::string urlPath = decodeUrlPath(rawPath);
@@ -95,6 +100,7 @@ std::string Server::resolvePath(const std::string &rawPath, const LocationConfig
 	return fs;
 }
 
+// Route a parsed request to the CGI or regular HTTP response flow.
 void Server::dispatchRequest(int fd, const Request &req) {
     Client &client = _clients[fd];
     const ServerConfig *cfg = selectServerConfig(client.listenFd, req);
@@ -123,7 +129,7 @@ void Server::dispatchRequest(int fd, const Request &req) {
     setClientsEvents(fd, POLLOUT | POLLRDHUP);
 }
 
-// Handle new incoming client connections.
+// Accept and register new client connections.
 void	Server::handleNewConnection(int listenFd)
 {
 	while (true)
@@ -150,7 +156,7 @@ void	Server::handleNewConnection(int listenFd)
 	}
 }
 
-// Send the prepared response to the client.
+// Send the prepared HTTP response to the client socket.
 void	Server::handleWrite(std::size_t index)
 {
 	int		fd = _pollFds[index].fd;
@@ -210,7 +216,7 @@ void	Server::handleWrite(std::size_t index)
 	}
 }
 
-// Read incoming client data and process it once a full request has arrived.
+// Read incoming client data and parse a complete request when available.
 void	Server::handleRead(std::size_t index)
 {
 	int		fd = _pollFds[index].fd;

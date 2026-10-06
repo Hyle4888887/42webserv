@@ -2,13 +2,14 @@
 
 extern char **environ;
 
-// Return the "KEY" part of a "KEY=VALUE" environment entry.
+// Return the environment variable name from a KEY=VALUE entry.
 static std::string envKey(const std::string &entry)
 {
     std::string::size_type eq = entry.find('=');
     return (eq == std::string::npos) ? entry : entry.substr(0, eq);
 }
 
+// Resolve a relative interpreter path from the script directory.
 static std::string interpreterPathFromScriptDirectory(const std::string &interpreter, const std::string &directory)
 {
     if (interpreter.empty() || interpreter[0] == '/')
@@ -29,7 +30,7 @@ static std::string interpreterPathFromScriptDirectory(const std::string &interpr
     return prefix + interpreter;
 }
 
-// Prepare and execute the CGI child process.
+// Prepare and execute the CGI child process with the right environment.
 static void executeChild(const CGI &c)
 {
     std::string dir = ".", file = c.scriptPath; std::string::size_type slash = c.scriptPath.find_last_of('/');
@@ -105,7 +106,7 @@ static void executeChild(const CGI &c)
 // Close both ends of a pipe pair.
 static void closeIt(int fd[2]) { close(fd[0]); close(fd[1]); }
 
-// Start CGI execution using pipes and fork.
+// Start CGI execution using pipes and fork for request processing.
 bool CGI::start(void)
 {
     _pid = -1; _fdIn = -1; _fdOut = -1;

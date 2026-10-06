@@ -23,6 +23,7 @@ void Server::startCGI(int clientFd, CGI &cgi)
         _pollFds.push_back(q); _CGIToClient[client.CGIFdIn] = clientFd;
     }
 }
+// Read output from the CGI process and store it for the response.
 void Server::handleCGIRead(std::size_t index)
 {
     int CGIFd = _pollFds[index].fd;
@@ -42,6 +43,7 @@ void Server::handleCGIRead(std::size_t index)
         client.CGIFdIn = -1; }
     finishCGI(clientFd);
 }
+// Handle a CGI failure by killing it and sending a 502 response.
 void Server::handleCGIError(std::size_t index)
 {
     int CGIFd = _pollFds[index].fd;
@@ -65,6 +67,7 @@ void Server::handleCGIError(std::size_t index)
     client.responseReady = true;
     setClientPollout(clientFd);
 }
+// Forward request data to the CGI process stdin.
 void Server::handleCGIWrite(std::size_t index)
 {
     int CGIFd = _pollFds[index].fd;
@@ -89,6 +92,7 @@ void Server::handleCGIWrite(std::size_t index)
         client.CGIFdIn = -1; client.CGIInput.clear(); client.CGIInputOffset = 0;
         _pollFds[index].fd = -1; }
 }
+// Finalize CGI processing and turn the output into an HTTP response.
 void Server::finishCGI(int clientFd)
 {
     std::map<int,Client>::iterator it = _clients.find(clientFd);
@@ -103,6 +107,7 @@ void Server::finishCGI(int clientFd)
     c.outBuffer = resp; c.responseReady = true;
     setClientPollout(clientFd);
 }
+// Trigger a local redirect while preserving the same client context.
 void Server::internalRedirect(int clientFd, const std::string &target) {
     Request req = _clients[clientFd].cgiRequest;
     req.method = "GET"; req.body.clear(); req.headers.erase("content-lenght");
@@ -112,7 +117,9 @@ void Server::internalRedirect(int clientFd, const std::string &target) {
     dispatchRequest(clientFd, req);
 }
 
+// Tell whether a file descriptor belongs to an active CGI process.
 bool Server::isCGIFd(int fd) const { return _CGIToClient.find(fd) != _CGIToClient.end(); }
+// Detect the CGI script target from the request path and location config.
 bool Server::findCgiTarget(const Request &req, const ServerConfig &config, std::string &interpreter, std::string &scriptName, std::string &pathInfo) const
 {
 	const LocationConfig *location = matchLocation(req.path, config);
@@ -133,6 +140,7 @@ bool Server::findCgiTarget(const Request &req, const ServerConfig &config, std::
 	} return false;
 }
 
+// Resolve the server name for the CGI environment variables.
 std::string Server::cgiServerName(const Request &req, const ServerConfig &cfg, int listenFd) const {
     std::map<std::string, std::string>::const_iterator h = req.headers.find("host");
     if (h != req.headers.end() && !h->second.empty())

@@ -1,5 +1,6 @@
 #include "configParser.hpp"
 
+// Raise a config parser error with the token location.
 void ConfigParser::error(const Token& token, const std::string& message)
 {
 	std::ostringstream oss;
@@ -9,12 +10,14 @@ void ConfigParser::error(const Token& token, const std::string& message)
 	throw std::runtime_error(oss.str());
 }
 
+// Ensure the next token matches the expected type.
 void ConfigParser::expect(const std::vector<Token> &tokens, size_t &pos, TokenType expected)
 {
 	if (tokens[pos].type != expected)
 		error(tokens[pos], "Unexpected : '" + tokens[pos].value + "'");
 }
 
+// Parse the token stream and build every server block.
 void ConfigParser::parse(const std::vector<Token> &tokens)
 {
 	size_t pos = 0;
@@ -27,6 +30,7 @@ void ConfigParser::parse(const std::vector<Token> &tokens)
 	}
 }
 
+// Parse a server block and its directives.
 ServerConfig ConfigParser::parseServer(const std::vector<Token> &tokens, size_t &pos)
 {
 	pos++;
@@ -58,6 +62,7 @@ ServerConfig ConfigParser::parseServer(const std::vector<Token> &tokens, size_t 
 	return server;
 }
 
+// Initialize default server values before parsing directives.
 void ConfigParser::serverInit(ServerConfig &server)
 {
 	server.host = "0.0.0.0";
@@ -66,6 +71,7 @@ void ConfigParser::serverInit(ServerConfig &server)
 	server.clientMaxBodySize = 1048576; // 1Mb
 }
 
+// Parse the listen directive and store the host and port.
 void ConfigParser::parseListen(ServerConfig& server, const std::vector<Token> &tokens, size_t &pos)
 {
 	pos++;
@@ -102,6 +108,7 @@ void ConfigParser::parseListen(ServerConfig& server, const std::vector<Token> &t
 	pos++;
 }
 
+// Parse the server_name directive.
 void ConfigParser::parseServerName(ServerConfig &server, const std::vector<Token> &tokens, size_t &pos)
 {
 	pos++;
@@ -112,6 +119,7 @@ void ConfigParser::parseServerName(ServerConfig &server, const std::vector<Token
 	pos++;
 }
 
+// Parse the client_max_body_size limit for the server.
 void ConfigParser::parseClientMaxBodySize(ServerConfig &server, const std::vector<Token> &tokens, size_t &pos)
 {
 	pos++;
@@ -129,6 +137,7 @@ void ConfigParser::parseClientMaxBodySize(ServerConfig &server, const std::vecto
 	pos++;
 }
 
+// Parse an error_page directive and map a code to a file.
 void ConfigParser::parseErrorPage(ServerConfig &server, const std::vector<Token> &tokens, size_t &pos)
 {
 	std::ostringstream oss;
@@ -159,6 +168,7 @@ void ConfigParser::parseErrorPage(ServerConfig &server, const std::vector<Token>
 	pos++;
 }
 
+// Parse a location block and its directives.
 LocationConfig ConfigParser::parseLocation(const std::vector<Token> &tokens, size_t &pos)
 {
 	pos++;
@@ -188,6 +198,7 @@ LocationConfig ConfigParser::parseLocation(const std::vector<Token> &tokens, siz
 	return location;
 }
 
+// Initialize default values for a location block.
 void ConfigParser::locationInit(LocationConfig &location)
 {
 	location.root = "./";
@@ -202,6 +213,7 @@ void ConfigParser::locationInit(LocationConfig &location)
 	location.path = "/";
 }
 
+// Parse the root directive for a location.
 void ConfigParser::parseRoot(LocationConfig &location, const std::vector<Token> &tokens, size_t &pos)
 {
 	pos++;
@@ -212,6 +224,7 @@ void ConfigParser::parseRoot(LocationConfig &location, const std::vector<Token> 
 	pos++;
 }
 
+// Parse the index file directive for a location.
 void ConfigParser::parseIndex(LocationConfig &location, const std::vector<Token> &tokens, size_t &pos)
 {
 	pos++;
@@ -224,6 +237,7 @@ void ConfigParser::parseIndex(LocationConfig &location, const std::vector<Token>
 	pos++;
 }
 
+// Parse the client_max_body_size limit for a location.
 void ConfigParser::parseClientMaxBodySize(LocationConfig &location, const std::vector<Token> &tokens, size_t &pos)
 {
 	pos++;
@@ -240,6 +254,7 @@ void ConfigParser::parseClientMaxBodySize(LocationConfig &location, const std::v
 	pos++;
 }
 
+// Parse the allowed_methods directive and validate each HTTP verb.
 void ConfigParser::parseAllowedMethods(LocationConfig &location, const std::vector<Token> &tokens, size_t &pos)
 {
 	pos++;
@@ -262,6 +277,7 @@ void ConfigParser::parseAllowedMethods(LocationConfig &location, const std::vect
 	pos++;
 }
 
+// Parse the autoindex directive and enable directory listings when needed.
 void ConfigParser::parseAutoIndex(LocationConfig &location, const std::vector<Token> &tokens, size_t &pos)
 {
 	pos++;
@@ -277,6 +293,7 @@ void ConfigParser::parseAutoIndex(LocationConfig &location, const std::vector<To
 	pos++;
 }
 
+// Parse the upload_dir directive and enable uploads for this location.
 void ConfigParser::parseUploadDir(LocationConfig &location, const std::vector<Token> &tokens, size_t &pos)
 {
 	pos++;
@@ -295,6 +312,7 @@ void ConfigParser::parseUploadDir(LocationConfig &location, const std::vector<To
 	pos++;
 }
 
+// Parse the CGI extension mapping for this location.
 void ConfigParser::parseCgi(LocationConfig &location, const std::vector<Token> &tokens, size_t &pos)
 {
 	pos++;
@@ -314,6 +332,7 @@ void ConfigParser::parseCgi(LocationConfig &location, const std::vector<Token> &
 	pos++;
 }
 
+// Parse a redirect rule and store the target URL and status code.
 void ConfigParser::parseReturn(LocationConfig &location, const std::vector<Token> &tokens, size_t &pos)
 {
 	pos++;
@@ -334,6 +353,7 @@ void ConfigParser::parseReturn(LocationConfig &location, const std::vector<Token
 	pos++;
 }
 
+// Check whether a string ends with a given suffix.
 bool ConfigParser::endsWith(const std::string& fullString, const std::string& ending)
 {
     if (ending.size() > fullString.size())
@@ -341,6 +361,7 @@ bool ConfigParser::endsWith(const std::string& fullString, const std::string& en
     return fullString.compare(fullString.size() - ending.size(), ending.size(), ending) == 0;
 }
 
+// Check whether a string contains only digits.
 bool ConfigParser::isNumber(const std::string& s)
 {
 	if (s.empty())
@@ -355,6 +376,7 @@ bool ConfigParser::isNumber(const std::string& s)
 	return true;
 }
 
+// Validate whether a string is a proper IPv4 address.
 bool ConfigParser::isIPv4(const std::string& s)
 {
 	std::stringstream ss(s);
@@ -374,6 +396,7 @@ bool ConfigParser::isIPv4(const std::string& s)
 	return true;
 }
 
+// Validate whether a string is a correct TCP port number.
 bool ConfigParser::isValidPort(const std::string& s)
 {
 	if (s.empty())
@@ -386,6 +409,7 @@ bool ConfigParser::isValidPort(const std::string& s)
 	return true;
 }
 
+// Load and parse the configuration file from disk.
 ConfigParser::ConfigParser(const std::string &configFile)
 {
 	_serverParsers["listen"] = &ConfigParser::parseListen;
@@ -413,15 +437,18 @@ ConfigParser::ConfigParser(const std::string &configFile)
 	file.close();
 }
 
+// Destroy the parser instance.
 ConfigParser::~ConfigParser()
 {
 }
 
+// Return the parsed configuration object.
 const Config &ConfigParser::getConfig() const
 {
     return this->_config;
 }
 
+// Create upload directories declared in the configuration.
 void ConfigParser::createUploadDir()
 {
 	for (size_t i = 0; i < this->_config.servers.size(); ++i)

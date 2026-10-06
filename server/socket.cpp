@@ -1,4 +1,3 @@
-
 #include "server.hpp"
 
 // Put a socket into non-blocking mode.

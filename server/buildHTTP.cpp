@@ -2,6 +2,7 @@
 
 #include <cctype>
 
+// Check whether a version string matches an HTTP/X.Y format.
 static bool isHTTPformat(const std::string &v)
 {
 	return v.size() == 8 && v.compare(0, 5, "HTTP/") == 0 
@@ -10,6 +11,7 @@ static bool isHTTPformat(const std::string &v)
 	&& std::isdigit(static_cast<unsigned char>(v[7]));
 }
 
+// Convert a string to lowercase for case-insensitive header checks.
 static std::string toLowerCopy(const std::string &s)
 {
 	std::string out = s;
@@ -18,6 +20,7 @@ static std::string toLowerCopy(const std::string &s)
 	return out;
 }
 
+// Remove leading and trailing whitespace from a string.
 static std::string trimCopy(const std::string &s)
 {
 	std::size_t begin = 0;
@@ -47,6 +50,7 @@ static std::string collapseSlashes(const std::string &path)
 	return out;
 }
 
+// Parse a raw HTTP request into a structured Request object.
 Request Server::parseRequest(const std::string &rawRequest) const
 {
 	Request req;
@@ -120,6 +124,7 @@ Request Server::parseRequest(const std::string &rawRequest) const
 	return req;
 }
 
+// Remove the port part from a Host header value.
 static std::string stripPort(const std::string &host)
 {
 	std::string::size_type colon = host.find(':');
@@ -128,6 +133,7 @@ static std::string stripPort(const std::string &host)
 	return host.substr(0, colon);
 }
 
+// Choose the server block matching the listening socket and Host header.
 const ServerConfig *Server::selectServerConfig(int listenFd, const Request &req) const
 {
 	if (_config.servers.empty())
@@ -163,6 +169,7 @@ const ServerConfig *Server::selectServerConfig(int listenFd, const Request &req)
 	return &_config.servers[0];
 }
 
+// Build an error response for the selected virtual server.
 std::string Server::errorFor(int code, int listenFd, const Request &req) const
 {
 	const ServerConfig *cfg = selectServerConfig(listenFd, req);
@@ -170,13 +177,14 @@ std::string Server::errorFor(int code, int listenFd, const Request &req) const
 	ServerConfig none; return Response::errorResponse(code, none);
 }
 
-// Build an HTTP response from the parsed request.
+// Build an HTTP response from the raw request text.
 void	Server::buildResponse(Client &client, const std::string &rawRequest)
 {
 	Request req = parseRequest(rawRequest);
 	buildResponse(client, req);
 }
 
+// Build an HTTP response from a parsed request object.
 void	Server::buildResponse(Client &client, const Request &req)
 {
 	const ServerConfig *serverConfig = selectServerConfig(client.listenFd, req);

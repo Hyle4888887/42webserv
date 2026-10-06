@@ -1,6 +1,7 @@
 #include "utils.hpp"
+#include <iostream>
 
-// Convert an unsigned integer to a string.
+// Converts an unsigned integer into its string representation.
 std::string	toString(unsigned long value)
 {
 	std::ostringstream	oss;
@@ -8,9 +9,10 @@ std::string	toString(unsigned long value)
 	return oss.str();
 }
 
-// Return the last character of a string.
+// Returns the last character of a string.
 int lastC(const std::string str) { return str[str.size() - 1]; }
 
+// Converts a hexadecimal digit to its numeric value.
 static int hexValue(char c) {
 	if (c >= '0' && c <= '9') return c - '0';
 	if (c >= 'A' && c <= 'F') return c - 'A' + 10;
@@ -18,6 +20,7 @@ static int hexValue(char c) {
 	return -1;
 }
 
+// Decodes URL-encoded characters like %20 back to their original form.
 std::string decodeUrlPath(const std::string &path) {
 	std::string decoded;
 	for (std::size_t i = 0; i < path.size(); ++i) {
@@ -29,5 +32,6 @@ std::string decodeUrlPath(const std::string &path) {
 				i += 2; continue;
 			}
 		} decoded += path[i];
-	} return decoded;
+	}
+	return decoded;
 }

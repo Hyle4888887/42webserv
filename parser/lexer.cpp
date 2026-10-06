@@ -1,5 +1,6 @@
 #include "lexer.hpp"
 
+// Skip spaces and comments so tokenization ignores non-significant text.
 void Lexer::skipWhitespace()
 {
 	while (this->_i < this->_content.size())
@@ -16,6 +17,7 @@ void Lexer::skipWhitespace()
 	}
 }
 
+// Convert the configuration text into a list of tokens.
 std::vector<Token> Lexer::tokenize()
 {
 	char	c;
@@ -49,6 +51,7 @@ std::vector<Token> Lexer::tokenize()
 	return (tokens);
 }
 
+// Read the next identifier or keyword from the input stream.
 Token Lexer::readWord()
 {
 	char	c;
@@ -68,6 +71,7 @@ Token Lexer::readWord()
 	return Token(IDENTIFIER, value, line, column);
 }
 
+// Move the cursor forward and update the current line and column.
 void Lexer::advance()
 {
 	if (this->_content[_i] == '\n')
@@ -80,16 +84,19 @@ void Lexer::advance()
     this->_i++;
 }
 
+// Initialize the lexer with the raw configuration content.
 Lexer::Lexer(const std::string &content) : _content(content), _i(0), _line(1),
 	_column(1)
 {
 }
 
+// Copy another lexer state.
 Lexer::Lexer(const Lexer &other) : _content(other._content), _i(other._i),
 	_line(other._line), _column(other._column)
 {
 }
 
+// Assign one lexer state to another.
 Lexer &Lexer::operator=(const Lexer &other)
 {
 	if (this != &other)
@@ -102,6 +109,7 @@ Lexer &Lexer::operator=(const Lexer &other)
 	return (*this);
 }
 
+// Destroy the lexer instance.
 Lexer::~Lexer()
 {
 }

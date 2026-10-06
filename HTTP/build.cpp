@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <cctype>
 
+// Encode a path segment so it stays valid in a URL.
 static std::string encodeUrlSegment(const std::string &value)
 {
     static const char hex[] = "0123456789ABCDEF";
@@ -22,6 +23,7 @@ static std::string encodeUrlSegment(const std::string &value)
     return encoded;
 }
 
+// Escape HTML characters so directory listings stay safe to display.
 static std::string escapeHtml(const std::string &value)
 {
     std::string escaped;

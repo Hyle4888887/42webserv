@@ -19,7 +19,7 @@ pour sauvegarder son état, fermer ses connexions et s'éteindre proprement.
 
 fd: Le noyau de l'OS maintient une table pour chaque programme. 
 Chaque ressource ouverte reçoit un petit entier positif 
-(0 pour l'entrée standard, 1 pour la sortie standard, 2 pour l'erreur standard, puis 3, 4, etc. pour vos fichiers).
+(0 pour l'entrée standard, 1 pour la sortie standard, 2 pour l'erreur standard, puis 3, etc... pour vos client).
 Ce pourquoi le programme avec fd 4.
 
 fcntl: permet de manipuler un descripteur de fichier ouvert pour modifier ses indicateurs de statut ou gérer des verrous.

@@ -1,6 +1,7 @@
 #include "CGI.hpp"
 #include <cctype>
 
+// Check whether a CGI status line is valid.
 static bool validStatus(const std::string &v) {
     return v.size() >= 3 && v[0] >= '1' && v[0] <= '5'
         && std::isdigit(static_cast<unsigned char>(v[1]))

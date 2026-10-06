@@ -1,6 +1,6 @@
 #include "CGI.hpp"
 
-// Initialize the CGI process state.
+// Initialize the CGI process state from the incoming HTTP request.
 CGI::CGI(const Request &req): _pid(-1), _fdIn(-1), _fdOut(-1),
     method(req.method), protocol(req.version), query(req.query),
     requestUri(req.path), body(req.body), headers(req.headers)

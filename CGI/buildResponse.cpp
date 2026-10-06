@@ -9,15 +9,6 @@ static bool validStatus(const std::string &v) {
         && (v.size() == 3 || v[3] == ' ');
 }
 
-// Lowercase a header name for CGI parsing.
-static std::string toLower(const std::string &name)
-{
-    std::string lower = name;
-    for (std::string::iterator it = lower.begin(); it != lower.end(); ++it)
-    { if (*it >= 'A' && *it <= 'Z') { *it = *it + ('a' - 'A'); } }
-    return lower;
-}
-
 // Rebuild the CGI output as a valid HTTP response.
 std::string CGI::buildResponse(const std::string &cgiOut, std::string &localRedirect)
 {
@@ -40,7 +31,7 @@ std::string CGI::buildResponse(const std::string &cgiOut, std::string &localRedi
         std::string name = line.substr(0, colon), value = line.substr(colon + 1);
         std::string::size_type vs = value.find_first_not_of(" \t");
         value = (vs == std::string::npos) ? "" : value.substr(vs);
-        std::string lower = toLower(name);
+        std::string lower = toLowerCopy(name);
         if (lower == "status") {
             if (!validStatus(value)) return "";
             status = (value.size() == 3) ? value + " " : value;

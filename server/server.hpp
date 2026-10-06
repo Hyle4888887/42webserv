@@ -93,8 +93,6 @@ class Server
 	void buildResponse(Client &client, const Request &req);
 	Request parseRequest(const std::string &rawRequest) const;
 	const ServerConfig *selectServerConfig(int listenFd, const Request &req) const;
-	const LocationConfig *matchLocation(const std::string &path, const ServerConfig &config) const;
-	std::string resolvePath(const std::string &urlPath, const LocationConfig &location) const;
 	bool findCgiTarget(const Request &req, const ServerConfig &config, std::string &interpreter, std::string &scriptName, std::string &pathInfo) const;
 	void checkTimeouts();
 	void checkCGITimeouts();

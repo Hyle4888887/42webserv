@@ -36,8 +36,6 @@ class Response
     static std::string handleDELETE(const Request &req, const LocationConfig &location, const ServerConfig &config);
 
     /*Helpers*/
-    static const LocationConfig *matchLocation(const std::string &path, const ServerConfig &config);
-    static std::string        resolvePath(const std::string &urlPath, const LocationConfig &location);
     static std::string        getMime(const std::string &path);
     static std::string        readFile(const std::string &path, bool &ok);
     static std::string        buildDirectoryListing(const std::string &urlPath, const std::string &fsPath);

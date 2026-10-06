@@ -6,7 +6,7 @@
 /*   By: mpoirier <mpoirier@student.42nice.fr>      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/06/09 13:53:46 by mpoirier          #+#    #+#             */
-/*   Updated: 2026/06/09 13:56:46 by mpoirier         ###   ########.fr       */
+/*   Updated: 2026/10/03 11:14:23 by mpoirier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -24,6 +24,13 @@ void Server::setClientPollout(int clientFd)
         if (_pollFds[i].fd == clientFd) { _pollFds[i].events = POLLOUT; return; }
 }
 
+void Server::setClientsEvents(int clientFd, short events) 
+{
+    for (std::size_t i = 0; i < _pollFds.size(); ++i)
+        if (_pollFds[i].fd == clientFd) { _pollFds[i].events = events; return; }
+}
+
+// delete useless things
 void Server::compactPollFds()
 {
     std::vector<struct pollfd> kept;

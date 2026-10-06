@@ -1,0 +1,93 @@
+HTTP: HyperText Transfert Protocol est un protocole de communication 
+qui permet d'échanger des données entre un client et un serveur.
+
+TCP: Transfert Control Protocol TCP est un protocole de la couche transport qui garantit 
+l'acheminement fiable et ordonné de ces données sur le réseau.
+
+WWW: World Wide Web, est un système public d'information qui permet 
+de consulter des pages reliées par des liens hypertextes sur Internet.
+
+Dans main:
+    -SIGPIPE:Envoyé à un processus lorsqu'il tente d'écrire dans un tube (pipe) ou une socket dont l'autre 
+extrémité a été fermée par le récepteur. Par défaut, ce signal termine immédiatement le processus.
+    -SIGINT: Envoyé à un processus pour l'interrompre. C'est le signal généré par l'utilisateur lorsqu'il 
+tape la combinaison de touches Ctrl + C dans le terminal. Par défaut, il arrête proprement 
+le processus, mais ce dernier peut l'intercepter pour nettoyer des fichiers temporaires avant de quitter.
+    -SIGTERM: Le signal de terminaison générique. C'est le signal par défaut envoyé par la commande kill. 
+Contrairement à SIGKILL (9), SIGTERM est une demande de fermeture polie : le processus peut l'intercepter 
+pour sauvegarder son état, fermer ses connexions et s'éteindre proprement.
+
+fcntl: permet de manipuler un descripteur de fichier ouvert pour modifier ses indicateurs de statut ou gérer des verrous.
+L'utilisation conjointe de F_SETFL et O_NONBLOCK avec la fonction fcntl permet de configurer 
+un descripteur de fichier ou un socket en mode non bloquant.
+
+F_SETFL: Permet de définir de nouveaux états sur la description du fichier ouvert
+
+O_NONBLOCK: Empêche les fonctions de read ou write de mettre le programme en attente (blocage) 
+si aucune donnée n'est disponible immédiatement. Elles retournent directement une erreur EAGAIN ou EWOULDBLOCK.
+
+poll(): est une fonction "multiplexe", ce qui veut dire qu'il peut en un seul thread 
+read & write plusieurs cannaux d'entree sortie simultanement.
+
+pollflags:
+    -POLLIN: Des données sont disponibles en lecture sans blocage.
+    -POLLOUT: L'écriture de données est possible sans blocage
+    -POLLHUP: Le correspondant a raccroché (Hang Up). La connexion est fermée du côté distant, utilisé pour les sockets ou les pipes.
+    -POLLRHUP:La connexion a été fermée par le côté distant, ou le côté distant a fermé sa propre écriture (Read Hang Up). 
+Permet de détecter une fermeture partielle plus facilement qu'avec POLLHUP.
+    -POLLRDHUP: Est unique linux et permet lq fermeture d'un des lecteur, client ou serveur.
+    -POLLERR: Une condition d'erreur s'est produite sur le descripteur de fichier.
+    -POLLNVAL: Le descripteur de fichier n'est pas valide.
+
+socket flags:
+    -SO_REUSEADDR: permet de reutiliser une adresse local pour evité les erreur d'adresse deja utilisé.
+    -SOL_SOCKET: constante utilise dans l'API pour specifier le niveau de protocol.
+
+AI: Adress information
+
+FIFO: First In FIrst Out, qui veut dire premier arriver premier sortie, pour crée une file d'attente.
+
+RFC: ou "Request For Comments" est un document technique officiel numéroté qui décrit 
+et définit les protocoles, les normes, les architectures et les méthodes utilisés 
+sur le réseau Internet.
+
+Telnet: ou "Terminal network" est un protocole utilise par tout 
+les reseau TCP/IP (Transmission Control Procotcol/Internet Procotcol) cree en 1969
+et est normalise par IETF (Internet Enginering Task Force) grace 
+aux normes RFC 15 854 et 855.
+permet de tester GET POST DELETE.
+Utilisation:
+"sudo apt-get install telnet" (sous VM)
+telnet IP adress/host port(exmple: telnet localhost 3000)
+"GET / HTTP/1.1
+Host: localhost"
+"POST /uploads/test.txt HTTP/1.1
+Host: localhost"
+Content-Type: text/plain
+Content-length: 11
+Hello World"
+"DELETE /uploads/test.txt HTTP/1.1
+Host: localhost"
+
+Curl: permet de transférer des données vers ou depuis un serveur en utilisant une simple URL.
+Utilisation:
+"curl -X GET http://localhost:8080"
+"curl -X POST -H "Content-Type: text/plain" --data "Hello World" http://localhost:8080/uploads/test.txt"
+"curl -X DELETE http://localhost:8080/uploads/test.txt"
+
+NGINX: cree en 2004, est un logiciel libre de serveur web et de proxy inverse
+elle utilise une architecture asynchrone et événementielle lui permettant de gérer 
+plusieurs connexions simultanées avec une consommation de mémoire minime.
+
+CGI: ou "Common Gateway Interface" permet à un serveur web de communiquer avec 
+des programmes externes.
+
+Stress test: est une simulation informatique ou pratique conçue pour évaluer 
+la robustesse d'un système, d'une organisation ou d'un organisme face à 
+des conditions extrêmes ou anormales.
+"sudo apt install stress s-tui stress-ng"(sous VM)
+
+Siege test: Permet de tester le serveur, utilisation:
+"sudo apt install siege"(sous VM)
+siege -c50 -t30S https://example.com (c = nombres de requetes, t = temps)
+siege -f urls.txt -c25 -t1M (f = fichier)

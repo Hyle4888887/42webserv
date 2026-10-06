@@ -24,6 +24,7 @@ int	main(int argc, char **argv)
 		ConfigParser parser(configPath);
 		std::cout << "Configuration parsed successfully!" << std::endl;
 
+		parser.createUploadDir();
 		const Config& config = parser.getConfig();
 
 		signal(SIGPIPE, SIG_IGN);

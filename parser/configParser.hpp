@@ -11,6 +11,8 @@
 #include <unistd.h>
 #include <bits/stdc++.h>
 #include <dirent.h>
+#include <sys/stat.h>
+#include <errno.h>
 #include "lexer.hpp"
 #include "config.hpp"
 #include "serverConfig.hpp"
@@ -61,13 +63,13 @@ private:
 	bool isNumber(const std::string& s);
 	bool isIPv4(const std::string& ip);
 	bool isValidPort(const std::string& s);
-	bool isDirectory(const std::string& path);
 
 public:
 	ConfigParser(const std::string& configFile);
 	~ConfigParser();
 
 	const Config& getConfig() const;
+	void createUploadDir();
 };
 
 #endif

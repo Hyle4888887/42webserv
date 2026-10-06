@@ -23,6 +23,7 @@
 #include <cstdlib>
 
 #include "../utils/utils.hpp"
+#include "../HTTP/struct.hpp"
 
 class CGI
 {
@@ -31,17 +32,19 @@ class CGI
         int _fdIn;
         int _fdOut;
     public:
+        std::string interpreter, scriptPath, scriptName, pathInfo, pathTranslated;
+        std::string method, protocol, query, requestUri, body;
+        std::string serverName, serverPort, remoteAddr, remotePort;
+        std::map<std::string, std::string> headers;
+
         //Dans le CGI.cpp
-        CGI(void);
+        CGI(const Request &req);
         pid_t getPid(void) const;
         int getFdIn(void) const;
         int getFdOut(void) const;
 
         // start et buildResponse sont chacune dans leur fichier
-        bool start(const std::string &interpreter, const std::string &scriptPath, const std::string &method, const std::string &query, const std::string &requestUri, const std::string &body, const std::map<std::string, std::string> &headers, const std::string &serverName, const std::string &serverPort);
-        static std::string buildResponse(const std::string &cgiOut);
+        bool start(void);
+        static std::string buildResponse(const std::string &cgiOut, std::string &localRedirect);
         
 };
-
-//std::string executeCGI(const std::string &interpreter, const std::string &scriptPath, const std::string &method, const std::string &query, const std::string &body);
-//std::string buildCGIResponse(const std::string &cgiOut);

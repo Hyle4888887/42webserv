@@ -30,35 +30,38 @@ static std::string interpreterPathFromScriptDirectory(const std::string &interpr
 }
 
 // Prepare and execute the CGI child process.
-static void executeChild(const std::string &interpreter, const std::string &scriptPath, const std::string &method, const std::string &query, const std::string &requestUri, const std::string &body, const std::map<std::string, std::string> &headers, const std::string &serverName, const std::string &serverPort)
+static void executeChild(const CGI &c)
 {
-    std::string dir = ".", file = scriptPath; std::string::size_type slash = scriptPath.find_last_of('/');
-    if (slash != std::string::npos) { dir = scriptPath.substr(0, slash); file = scriptPath.substr(slash + 1); if (dir.empty()) {dir = "/";}}
-    std::string execPath = interpreterPathFromScriptDirectory(interpreter, dir);
+    std::string dir = ".", file = c.scriptPath; std::string::size_type slash = c.scriptPath.find_last_of('/');
+    if (slash != std::string::npos) { dir = c.scriptPath.substr(0, slash); file = c.scriptPath.substr(slash + 1); if (dir.empty()) {dir = "/";}}
+    std::string execPath = interpreterPathFromScriptDirectory(c.interpreter, dir);
     std::vector<std::string> env;
     env.push_back("GATEWAY_INTERFACE=CGI/1.1");
-    env.push_back("SERVER_PROTOCOL=HTTP/1.1");
-    env.push_back("REQUEST_METHOD=" + method);
-    env.push_back("QUERY_STRING=" + query);
-    env.push_back("REQUEST_URI=" + requestUri);
-    env.push_back("PATH_INFO=" + requestUri);
-    env.push_back("SERVER_NAME=" + serverName);
-    env.push_back("SERVER_PORT=" + serverPort);
-    env.push_back("SCRIPT_FILENAME=" + scriptPath);
-    env.push_back("SCRIPT_NAME=" + file);
+    env.push_back("SERVER_SOFTWARE=webserv/1.0");
+    env.push_back("SERVER_PROTOCOL=" + c.protocol);
+    env.push_back("SERVER_NAME=" + c.serverName);
+    env.push_back("SERVER_PORT=" + c.serverPort);
+    env.push_back("REQUEST_METHOD=" + c.method);
+    env.push_back("QUERY_STRING=" + c.query);
+    env.push_back("REQUEST_URI=" + c.requestUri);
+    env.push_back("SCRIPT_NAME=" + c.scriptName);
+    env.push_back("SCRIPT_FILENAME=" + file);
+    env.push_back("PATH_INFO=" + c.pathInfo);
+    if (!c.pathInfo.empty())
+        env.push_back("PATH_TRANSLATED=" + interpreterPathFromScriptDirectory(c.pathTranslated, dir));
+    env.push_back("REMOTE_ADDR=" + c.remoteAddr);
+    env.push_back("REMOTE_HOST=" + c.remoteAddr);
+    env.push_back("REMOTE_PORT=" + c.remotePort);
     env.push_back("REDIRECT_STATUS=200");
-    std::map<std::string, std::string>::const_iterator contentLength = headers.find("content-length");
-    if (contentLength != headers.end())
-        env.push_back("CONTENT_LENGTH=" + contentLength->second);
-    else if (method == "POST")
-        env.push_back("CONTENT_LENGTH=" + toString(body.size()));
-    std::map<std::string, std::string>::const_iterator contentType = headers.find("content-type");
-    if (contentType != headers.end())
+    if (!c.body.empty())
+        env.push_back("CONTENT_LENGTH=" + toString(c.body.size()));
+    std::map<std::string, std::string>::const_iterator contentType = c.headers.find("content-type");
+    if (contentType != c.headers.end())
         env.push_back("CONTENT_TYPE=" + contentType->second);
-    else if (method == "POST")
+    else if (c.method == "POST")
         env.push_back("CONTENT_TYPE=application/x-www-form-urlencoded");
 
-    for (std::map<std::string, std::string>::const_iterator it = headers.begin(); it != headers.end(); ++it)
+    for (std::map<std::string, std::string>::const_iterator it = c.headers.begin(); it != c.headers.end(); ++it)
     {
         if (it->first == "content-length" || it->first == "content-type")
             continue;
@@ -103,7 +106,7 @@ static void executeChild(const std::string &interpreter, const std::string &scri
 static void closeIt(int fd[2]) { close(fd[0]); close(fd[1]); }
 
 // Start CGI execution using pipes and fork.
-bool CGI::start(const std::string &interpreter, const std::string &scriptPath, const std::string &method, const std::string &query, const std::string &requestUri, const std::string &body, const std::map<std::string, std::string> &headers, const std::string &serverName, const std::string &serverPort)
+bool CGI::start(void)
 {
     _pid = -1; _fdIn = -1; _fdOut = -1;
     int in[2], out[2];
@@ -115,7 +118,7 @@ bool CGI::start(const std::string &interpreter, const std::string &scriptPath, c
     {
         dup2(in[0], STDIN_FILENO); dup2(out[1], STDOUT_FILENO);
         closeIt(in); closeIt(out);
-        executeChild(interpreter, scriptPath, method, query, requestUri, body, headers, serverName, serverPort);
+        executeChild(*this);
         std::exit(1);
     }
     close(in[0]); close(out[1]);

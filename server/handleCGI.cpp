@@ -2,22 +2,18 @@
 #include "server.hpp"
 
 // Start a CGI process and register its pipes.
-void Server::startCGI(int clientFd, const std::string &interpreter, const std::string &scriptPath, const std::string &method, const std::string &query, const std::string &requestUri, const std::string &body, const std::map<std::string, std::string> &headers, const std::string &serverName, const std::string &serverPort)
+void Server::startCGI(int clientFd, CGI &cgi)
 {
     Client &client = _clients[clientFd];
-    CGI *cgi = new CGI();
-    if (!cgi->start(interpreter, scriptPath, method, query, requestUri, body, headers, serverName, serverPort)) {
-        delete cgi;
-        client.outBuffer = "HTTP/1.1 500 Internal Server Error\r\nContent-Type: text/html\r\nContent-Length: 0\r\nConnection: close\r\n\r\n";
+    if (!cgi.start()) {
+        client.outBuffer = errorFor(500, client.listenFd, client.cgiRequest);
         client.responseReady = true;
         setClientPollout(clientFd);
         return; }
-
-    client.CGIActive = true; client.CGIPid    = cgi->getPid();
-    client.CGIFdOut  = cgi->getFdOut(); client.CGIFdIn   = cgi->getFdIn();
-    client.CGIInput  = body; client.CGIInputOffset = 0; client.CGIOutput.clear();
-    client.CGIStart  = std::time(NULL);
-    delete cgi;
+    client.CGIActive = true; client.CGIPid = cgi.getPid();
+    client.CGIFdOut = cgi.getFdOut(); client.CGIFdIn = cgi.getFdIn();
+    client.CGIInput.swap(cgi.body); client.CGIInputOffset = 0;
+    client.CGIOutput.clear(); client.CGIStart = std::time(NULL);
     struct pollfd p;
     p.fd = client.CGIFdOut; p.events = POLLIN; p.revents = 0;
     _pollFds.push_back(p); _CGIToClient[client.CGIFdOut] = clientFd;
@@ -65,7 +61,7 @@ void Server::handleCGIError(std::size_t index)
         client.CGIFdIn = -1;
     }
     client.CGIActive = false;
-    client.outBuffer = "HTTP/1.1 502 Bad Gateway\r\nContent-Type: text/html\r\nContent-Length: 0\r\nConnection: close\r\n\r\n";
+    client.outBuffer = errorFor(502, client.listenFd, client.cgiRequest);
     client.responseReady = true;
     setClientPollout(clientFd);
 }
@@ -97,8 +93,51 @@ void Server::finishCGI(int clientFd)
 {
     std::map<int,Client>::iterator it = _clients.find(clientFd);
     if (it == _clients.end()) { return; }
-    it->second.outBuffer = CGI::buildResponse(it->second.CGIOutput);
-    it->second.responseReady = true; it->second.CGIActive = false;
+    Client &c = it->second; c.CGIActive = false;
+    std::string target, resp = CGI::buildResponse(c.CGIOutput, target);
+    c.CGIOutput.clear();
+    if (!target.empty()) {
+        if (++c.CGIRedirects <= 5) {internalRedirect(clientFd, target); return; }
+        resp = errorFor(500, c.listenFd, c.cgiRequest);
+    } else if (resp.empty()) resp = errorFor(502, c.listenFd, c.cgiRequest);
+    c.outBuffer = resp; c.responseReady = true;
     setClientPollout(clientFd);
 }
+void Server::internalRedirect(int clientFd, const std::string &target) {
+    Request req = _clients[clientFd].cgiRequest;
+    req.method = "GET"; req.body.clear(); req.headers.erase("content-lenght");
+    req.headers.erase("content_type"); req.headers.erase("transfer-encoding");
+    std::string::size_type q = target.find('?'); req.path = target.substr(0, q);
+    req.query = (q == std::string::npos) ? std::string() : target.substr(q+1);
+    dispatchRequest(clientFd, req);
+}
+
 bool Server::isCGIFd(int fd) const { return _CGIToClient.find(fd) != _CGIToClient.end(); }
+bool Server::findCgiTarget(const Request &req, const ServerConfig &config, std::string &interpreter, std::string &scriptName, std::string &pathInfo) const
+{
+	const LocationConfig *location = matchLocation(req.path, config);
+	if (!location || location->cgi.empty()) return false;
+	std::string::size_type end = 0;
+	while (end != std::string::npos) {
+		end = req.path.find('/', end + 1);
+		std::string prefix = req.path.substr(0, end);
+		std::string::size_type dot = prefix.rfind('.'), slash = prefix.rfind('/');
+		if (dot == std::string::npos || (slash != std::string::npos && dot < slash))
+			continue;
+		std::map<std::string, std::string>::const_iterator it = location->cgi.find(prefix.substr(dot));
+		if (it != location->cgi.end()) {
+			interpreter = it->second; scriptName = prefix;
+			pathInfo = (end == std::string::npos) ? std::string() : req.path.substr(end);
+			return true;
+		}
+	} return false;
+}
+
+std::string Server::cgiServerName(const Request &req, const ServerConfig &cfg, int listenFd) const {
+    std::map<std::string, std::string>::const_iterator h = req.headers.find("host");
+    if (h != req.headers.end() && !h->second.empty())
+        return h->second.substr(0, h->second.find(':'));
+    if (!cfg.serverName.empty()) return cfg.serverName;
+    std::map<int, std::string>::const_iterator l = _listenerHosts.find(listenFd);
+    return l != _listenerHosts.end() ? l->second : std::string("localhost");
+}

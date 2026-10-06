@@ -6,7 +6,7 @@
 /*   By: mpoirier <mpoirier@student.42nice.fr>      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/06/02 12:52:06 by bozil             #+#    #+#             */
-/*   Updated: 2026/09/25 14:26:03 by mpoirier         ###   ########.fr       */
+/*   Updated: 2026/10/05 11:18:59 by mpoirier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -44,6 +44,7 @@
 #define CLIENT_TIMEOUT 180
 #define CGI_TIMEOUT 20
 
+
 extern volatile sig_atomic_t g_stop;
 
 class Server
@@ -54,7 +55,6 @@ class Server
 	~Server();
 	bool addListener(const std::string &host, int port);
 	void run();
-
   private:
 	Server(const Server &other);
 	struct	Client
@@ -85,8 +85,12 @@ class Server
 		std::size_t requestChunkRemaining;
 		std::size_t requestHeaderEnd;
 		std::string requestBody;
+		std::string remoteAddr;
+		std::string remotePort;
+		Request		cgiRequest;
+		int			CGIRedirects;
 
-		Client(): outBufferOffset(0), responseFileFd(-1), responseFileRemaining(0), responseReady(false), lastActivityTime(std::time(NULL)), CGIActive(false), CGIPid(-1), CGIFdIn(-1), CGIFdOut(-1), listenFd(-1), CGIInputOffset(0), CGIStart(0), requestInitialized(false), requestChunked(false), requestComplete(false), requestNeedChunkCRLF(false), requestFinalCRLFPending(false), requestBodyCursor(0), requestChunkRemaining(0), requestHeaderEnd(0) {}
+		Client(): outBufferOffset(0), responseFileFd(-1), responseFileRemaining(0), responseReady(false), lastActivityTime(std::time(NULL)), CGIActive(false), CGIPid(-1), CGIFdIn(-1), CGIFdOut(-1), listenFd(-1), CGIInputOffset(0), CGIStart(0), requestInitialized(false), requestChunked(false), requestComplete(false), requestNeedChunkCRLF(false), requestFinalCRLFPending(false), requestBodyCursor(0), requestChunkRemaining(0), requestHeaderEnd(0), CGIRedirects(0) {}
 	};
 
 	bool setNonBlocking(int fd);
@@ -103,7 +107,7 @@ class Server
 	const ServerConfig *selectServerConfig(int listenFd, const Request &req) const;
 	const LocationConfig *matchLocation(const std::string &path, const ServerConfig &config) const;
 	std::string resolvePath(const std::string &urlPath, const LocationConfig &location) const;
-	bool findCgiTarget(const Request &req, const ServerConfig &config, std::string &interpreter, std::string &scriptPath) const;
+	bool findCgiTarget(const Request &req, const ServerConfig &config, std::string &interpreter, std::string &scriptName, std::string &pathInfo) const;
 	void checkTimeouts();
 	void checkCGITimeouts();
 
@@ -116,7 +120,7 @@ class Server
 	Config _config;
 
 	bool isCGIFd(int fd) const;
-	void startCGI(int clientFd, const std::string &interpreter, const std::string &scriptPath, const std::string &method, const std::string &query, const std::string &requestUri, const std::string &body, const std::map<std::string, std::string> &headers, const std::string &serverName, const std::string &serverPort);
+	void startCGI(int clientFd, CGI &cgi);
 	void handleCGIRead(std::size_t index);
 	void handleCGIError(std::size_t index);
 	void handleCGIWrite(std::size_t index);
@@ -125,4 +129,10 @@ class Server
 	void disablePollFdByFd(int fd);
 	void setClientPollout(int clientFd);
 	void compactPollFds();
+	
+	std::string cgiServerName(const Request &req, const ServerConfig &cfg, int listenFd) const;
+	void dispatchRequest(int fd, const Request &req);
+	void internalRedirect(int clientFd, const std::string &target);
+	void setClientsEvents(int clientFd, short events);
+	std::string errorFor(int code, int listenFd, const Request &req) const;
 };

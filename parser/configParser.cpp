@@ -289,8 +289,6 @@ void ConfigParser::parseUploadDir(LocationConfig &location, const std::vector<To
 		error(tokens[pos], "Only accepted first parameter for 'upload_dir' are 'on' or 'off'");
 	pos++;
 	expect(tokens, pos, IDENTIFIER);
-	if (!isDirectory(tokens[pos].value))
-		error(tokens[pos], "Upload directory does not exist or is not a directory");
 	location.uploadDir = tokens[pos].value;
 	pos++;
 	expect(tokens, pos, SEMICOLON);
@@ -388,17 +386,6 @@ bool ConfigParser::isValidPort(const std::string& s)
 	return true;
 }
 
-bool ConfigParser::isDirectory(const std::string &path)
-{
-	DIR *dir = opendir(path.c_str());
-
-    if (dir == NULL)
-        return false;
-
-    closedir(dir);
-    return true;
-}
-
 ConfigParser::ConfigParser(const std::string &configFile)
 {
 	_serverParsers["listen"] = &ConfigParser::parseListen;
@@ -433,4 +420,62 @@ ConfigParser::~ConfigParser()
 const Config &ConfigParser::getConfig() const
 {
     return this->_config;
+}
+
+void ConfigParser::createUploadDir()
+{
+	for (size_t i = 0; i < this->_config.servers.size(); ++i)
+	{
+		for (size_t j = 0; j < this->_config.servers[i].locations.size(); ++j)
+		{
+			LocationConfig& location = this->_config.servers[i].locations[j];
+
+			if (location.path != "/uploads")
+				continue;
+
+			std::string path = location.uploadDir;
+
+			if (path.empty())
+				continue;
+
+			std::vector<std::string> parts;
+			std::string current;
+
+			for (size_t k = 0; k < path.size(); ++k)
+			{
+				if (path[k] == '/')
+				{
+					if (!current.empty())
+					{
+						parts.push_back(current);
+						current.clear();
+					}
+				}
+				else
+				{
+					current += path[k];
+				}
+			}
+
+			if (!current.empty())
+				parts.push_back(current);
+
+			path.clear();
+
+			for (size_t k = 0; k < parts.size(); ++k)
+			{
+				if (k == 0)
+					path = parts[k];
+				else
+					path += "/" + parts[k];
+
+				if (mkdir(path.c_str(), 0755) != 0)
+				{
+					if (errno != EEXIST)
+						throw std::runtime_error(
+							"Could not create uploads folder: " + path);
+				}
+			}
+		}
+	}
 }

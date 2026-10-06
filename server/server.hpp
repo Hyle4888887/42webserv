@@ -6,7 +6,7 @@
 /*   By: mpoirier <mpoirier@student.42nice.fr>      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/06/02 12:52:06 by bozil             #+#    #+#             */
-/*   Updated: 2026/10/05 11:18:59 by mpoirier         ###   ########.fr       */
+/*   Updated: 2026/10/06 11:23:06 by mpoirier         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -105,8 +105,6 @@ class Server
 	void buildResponse(Client &client, const Request &req);
 	Request parseRequest(const std::string &rawRequest) const;
 	const ServerConfig *selectServerConfig(int listenFd, const Request &req) const;
-	const LocationConfig *matchLocation(const std::string &path, const ServerConfig &config) const;
-	std::string resolvePath(const std::string &urlPath, const LocationConfig &location) const;
 	bool findCgiTarget(const Request &req, const ServerConfig &config, std::string &interpreter, std::string &scriptName, std::string &pathInfo) const;
 	void checkTimeouts();
 	void checkCGITimeouts();

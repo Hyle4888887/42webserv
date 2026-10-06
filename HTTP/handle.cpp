@@ -2,40 +2,11 @@
 
 #include <cctype>
 
-static std::string toLowerCopy(const std::string &s)
-{
-    std::string out = s;
-    for (std::size_t i = 0; i < out.size(); ++i)
-        out[i] = static_cast<char>(std::tolower(static_cast<unsigned char>(out[i])));
-    return out;
-}
-
-static std::string trimCopy(const std::string &s)
-{
-    std::string::size_type begin = 0;
-    while (begin < s.size() && std::isspace(static_cast<unsigned char>(s[begin])))
-        ++begin;
-
-    std::string::size_type end = s.size();
-    while (end > begin && std::isspace(static_cast<unsigned char>(s[end - 1])))
-        --end;
-
-    return s.substr(begin, end - begin);
-}
-
 static std::string stripQuotes(const std::string &s)
 {
     if (s.size() >= 2 && ((s[0] == '"' && s[s.size() - 1] == '"') || (s[0] == '\'' && s[s.size() - 1] == '\'')))
         return s.substr(1, s.size() - 2);
     return s;
-}
-
-static std::string baseName(const std::string &path)
-{
-    std::string::size_type slash = path.find_last_of("/\\");
-    if (slash == std::string::npos)
-        return path;
-    return path.substr(slash + 1);
 }
 
 static std::string getHeaderValue(const Request &req, const std::string &name)

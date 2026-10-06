@@ -2,27 +2,6 @@
 
 #include <cctype>
 
-static std::string toLowerCopy(const std::string &s)
-{
-	std::string out = s;
-	for (std::size_t i = 0; i < out.size(); ++i)
-		out[i] = static_cast<char>(std::tolower(out[i]));
-	return out;
-}
-
-static std::string trimCopy(const std::string &s)
-{
-	std::size_t begin = 0;
-	while (begin < s.size() && std::isspace(static_cast<unsigned char>(s[begin])))
-		++begin;
-
-	std::size_t end = s.size();
-	while (end > begin && std::isspace(static_cast<unsigned char>(s[end - 1])))
-		--end;
-
-	return s.substr(begin, end - begin);
-}
-
 // Collapse repeated slashes so "//directory" matches the "/directory" location.
 static std::string collapseSlashes(const std::string &path)
 {

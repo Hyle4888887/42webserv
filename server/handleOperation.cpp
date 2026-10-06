@@ -3,7 +3,7 @@
 static std::string ipToString(in_addr_t netAddr) {
 	unsigned long ip = ntohl(netAddr);
 	return toString((ip >> 24) & 0xFF) + "." + toString((ip >> 16) & 0xFF) + "."
-		+ toString((ip >> 8) && 0xFF) + "." + toString(ip & 0xFF);
+		+ toString((ip >> 8) & 0xFF) + "." + toString(ip & 0xFF);
 }
 
 // content-lenght is -> 0: absent, 1: valid, -1: invalid or duplicate 
@@ -29,19 +29,6 @@ static int getContentLength(const std::string &headersBlock, std::size_t &lenght
 	return iss.fail() ? -1 : 1;
 }
 
-static std::string joinPath(const std::string &base, const std::string &suffix)
-{
-	if (base.empty())
-		return suffix;
-	if (suffix.empty())
-		return base;
-	if (base[base.size() - 1] == '/' && suffix[0] == '/')
-		return base + suffix.substr(1);
-	if (base[base.size() - 1] != '/' && suffix[0] != '/')
-		return base + "/" + suffix;
-	return base + suffix;
-}
-
 static bool methodAllowed(const Request &req, const LocationConfig &location)
 {
 	const std::string &method = req.method;
@@ -49,50 +36,6 @@ static bool methodAllowed(const Request &req, const LocationConfig &location)
 		if (*it == method)
 			return true;
 	return location.allowedMethods.empty();
-}
-
-const LocationConfig *Server::matchLocation(const std::string &path, const ServerConfig &config) const
-{
-	const LocationConfig *best = NULL;
-	std::size_t bestLen = 0;
-
-	for (std::vector<LocationConfig>::const_iterator it = config.locations.begin(); it != config.locations.end(); ++it)
-	{
-		const std::string &prefix = it->path;
-		if (prefix.empty())
-			continue;
-		if (path.compare(0, prefix.size(), prefix) == 0
-			&& prefix.size() >= bestLen
-			&& (prefix == "/" || path.size() == prefix.size() || path[prefix.size()] == '/'))
-		{
-			best = &(*it);
-			bestLen = prefix.size();
-		}
-	}
-	return best;
-}
-
-std::string Server::resolvePath(const std::string &rawPath, const LocationConfig &location) const
-{
-	std::string urlPath = decodeUrlPath(rawPath);
-	std::string::size_type pos = 0;
-	while ((pos = urlPath.find("..", pos)) != std::string::npos)
-	{
-		bool before = (pos == 0 || urlPath[pos - 1] == '/');
-		bool after  = (pos + 2 == urlPath.size() || urlPath[pos + 2] == '/');
-		if (before && after)
-			return "";
-		pos += 2;
-	}
-
-	std::string fs = location.root;
-	if (!fs.empty() && lastC(fs) == '/')
-		fs.erase(fs.size() - 1);
-	std::string suffix = urlPath;
-	if (urlPath.compare(0, location.path.size(), location.path) == 0)
-		suffix = urlPath.substr(location.path.size());
-	fs = joinPath(fs, suffix);
-	return fs;
 }
 
 void Server::dispatchRequest(int fd, const Request &req) {
